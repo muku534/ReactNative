@@ -1,0 +1,27 @@
+# VS Code artifacts
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm/
+
+# Compilation output
+out/
+dist/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Misc
+.env
+.temp
+*.log
