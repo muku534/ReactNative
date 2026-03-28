@@ -1,15 +1,28 @@
 {
   "name": "reactnative",
   "displayName": "ReactNative",
-  "description": "Create React Native projects with ease, just like Flutter!",
+  "description": "Streamline React Native project creation with a powerful, command-palette driven interface.",
   "icon": "images/icon.png",
   "version": "1.0.0",
-  "publisher": "ReactNative",
+  "publisher": "muku534",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/muku534/ReactNative.git"
+  },
   "engines": {
     "vscode": "^1.75.0"
   },
   "categories": [
     "Other"
+  ],
+  "keywords": [
+    "react-native",
+    "cli",
+    "init",
+    "project",
+    "creator",
+    "productivity",
+    "boilerplate"
   ],
   "activationEvents": [],
   "main": "./out/extension.js",

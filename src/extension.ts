@@ -5,16 +5,9 @@ import { exec } from 'child_process';
 
 export function activate(context: vscode.ExtensionContext) {
     let disposable = vscode.commands.registerCommand('reactnative.newProject', async () => {
-        // 1. Template selection
-        const templates = [
-            { label: 'New Application', description: 'Full React Native app with standard template' },
-            { label: 'Bare Application', description: 'Minimal setup (skip-install)' },
-            { label: 'With Navigation', description: 'React Navigation pre-configured' },
-            { label: 'New Library', description: 'Create a React Native library for npm' }
-        ];
-
-        const selectedTemplate = await vscode.window.showQuickPick(templates, {
-            placeHolder: 'Select a template for your new project'
+        // 1. Template selection (Top Quick Pick UI)
+        const selectedTemplate = await vscode.window.showQuickPick(['Create a new React Native project'], {
+            placeHolder: 'Select a template or type to create a new project'
         });
 
         if (!selectedTemplate) {
@@ -53,32 +46,19 @@ export function activate(context: vscode.ExtensionContext) {
 
         // 4. CocoaPods prompt (macOS only)
         let installPods = false;
-        if (os.platform() === 'darwin' && selectedTemplate.label !== 'New Library') {
+        if (os.platform() === 'darwin') {
             const podChoice = await vscode.window.showQuickPick(['Yes', 'No'], {
                 placeHolder: 'Do you want to install CocoaPods now? (Recommended for iOS)'
             });
             installPods = podChoice === 'Yes';
         }
 
-        // 5. Assemble command
-        let command = '';
-        if (selectedTemplate.label === 'New Library') {
-            command = `npx -y create-react-native-library ${projectName} --yes`;
-        } else {
-            command = `npx -y @react-native-community/cli init ${projectName}`; 
-            if (selectedTemplate.label === 'Bare Application') {
-                command += ' --skip-install';
-            }
-            if (installPods) {
-                command += ' --install-pods true';
-            } else {
-                command += ' --install-pods false';
-            }
-        }
+        // 5. Assemble command (Clean and Robust)
+        const command = `npx -y @react-native-community/cli init ${projectName} --install-pods ${installPods}`;
 
         // 6. Run command with Progress API (Bypass terminal)
         const outputChannel = vscode.window.createOutputChannel("ReactNative Creator");
-        
+
         await vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
             title: `ReactNative: Creating project "${projectName}"...`,
@@ -87,7 +67,7 @@ export function activate(context: vscode.ExtensionContext) {
             return new Promise((resolve, reject) => {
                 outputChannel.appendLine(`Running: ${command}`);
                 outputChannel.appendLine(`In: ${projectDir}`);
-                
+
                 const process = exec(command, { cwd: projectDir });
 
                 process.stdout?.on('data', (data) => {
@@ -123,4 +103,4 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(disposable);
 }
 
-export function deactivate() {}
+export function deactivate() { }
