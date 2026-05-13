@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--vscode-font-family);
+    font-size: 13px;
+    color: var(--vscode-foreground);
+    background: transparent;
+    padding: 8px;
+  }
+
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 2px 10px;
+    border-bottom: 1px solid var(--vscode-panel-border);
+    margin-bottom: 10px;
+  }
+
+  .header-title {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    opacity: 0.6;
+  }
+
+  .icon-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--vscode-foreground);
+    opacity: 0.6;
+    padding: 3px 5px;
+    border-radius: 4px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+  }
+
+  .icon-btn:hover { opacity: 1; background: var(--vscode-toolbar-hoverBackground); }
+
+  .section-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    opacity: 0.5;
+    padding: 0 2px;
+    margin: 12px 0 5px;
+  }
+
+  .device-card {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 9px;
+    border-radius: 5px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    margin-bottom: 3px;
+    transition: background 0.1s;
+  }
+
+  .device-card:hover {
+    background: var(--vscode-list-hoverBackground);
+  }
+
+  .device-card.selected {
+    background: var(--vscode-list-activeSelectionBackground);
+    border-color: var(--vscode-focusBorder);
+  }
+
+  .device-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    flex-shrink: 0;
+  }
+
+  .device-icon.ios { background: rgba(0, 122, 255, 0.15); }
+  .device-icon.android { background: rgba(61, 220, 132, 0.15); }
+
+  .device-info { flex: 1; min-width: 0; }
+
+  .device-name {
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--vscode-foreground);
+  }
+
+  .device-meta {
+    font-size: 10px;
+    opacity: 0.55;
+    margin-top: 1px;
+  }
+
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .status-dot.booted { background: #3ddc84; }
+  .status-dot.connected { background: #3ddc84; }
+  .status-dot.offline { background: #666; }
+
+  .device-actions {
+    display: flex;
+    gap: 3px;
+    flex-shrink: 0;
+  }
+
+  .action-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--vscode-foreground);
+    opacity: 0.4;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+  }
+
+  .action-btn:hover { opacity: 1; background: var(--vscode-toolbar-hoverBackground); }
+
+  .action-btn.boot-btn { color: #3ddc84; opacity: 0.7; }
+  .action-btn.boot-btn:hover { opacity: 1; }
+
+  .action-btn.run-btn { color: #007aff; opacity: 0.7; }
+  .action-btn.run-btn:hover { opacity: 1; }
+
+  .run-bar {
+    display: flex;
+    gap: 5px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--vscode-panel-border);
+  }
+
+  .run-btn-main {
+    flex: 1;
+    padding: 6px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--vscode-button-border, transparent);
+    background: var(--vscode-button-secondaryBackground);
+    color: var(--vscode-button-secondaryForeground);
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    transition: background 0.1s;
+  }
+
+  .run-btn-main:hover { background: var(--vscode-button-secondaryHoverBackground); }
+  .run-btn-main:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .run-btn-main.primary {
+    background: var(--vscode-button-background);
+    color: var(--vscode-button-foreground);
+  }
+
+  .run-btn-main.primary:hover { background: var(--vscode-button-hoverBackground); }
+
+  .metro-card {
+    border: 1px solid var(--vscode-panel-border);
+    border-radius: 5px;
+    padding: 8px 10px;
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .metro-label {
+    font-size: 11px;
+    opacity: 0.7;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .metro-toggle {
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 3px;
+    border: 1px solid var(--vscode-panel-border);
+    background: var(--vscode-button-secondaryBackground);
+    color: var(--vscode-button-secondaryForeground);
+    cursor: pointer;
+  }
+
+  .metro-toggle:hover { background: var(--vscode-button-secondaryHoverBackground); }
+
+  .metro-toggle.running {
+    background: rgba(255, 69, 58, 0.15);
+    color: #ff453a;
+    border-color: rgba(255, 69, 58, 0.3);
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 24px 12px;
+    opacity: 0.5;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  .tip-text {
+    font-size: 10px;
+    opacity: 0.4;
+    text-align: center;
+    padding: 6px 4px;
+    line-height: 1.4;
+    margin-top: 8px;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <span class="header-title">RN Devices</span>
+  <button class="icon-btn" onclick="refresh()" title="Refresh">↻</button>
+</div>
+
+<div id="content">
+  <div class="empty-state">Loading devices...</div>
+</div>
+
+<div class="run-bar">
+  <button class="run-btn-main" id="btn-run" onclick="runSelected()" disabled>▶ Run on Selected</button>
+</div>
+
+<div class="metro-card">
+  <span class="metro-label">⚡ Metro Bundler</span>
+  <button class="metro-toggle" id="metro-btn" onclick="toggleMetro()">Start</button>
+</div>
+
+<div class="tip-text" id="tip">
+  Select a device and click Run. Offline devices will be booted automatically.
+</div>
+
+<script>
+  const vscode = acquireVsCodeApi();
+  let devices = [];
+  let selectedId = null;
+  let metroRunning = false;
+
+  function refresh() {
+    vscode.postMessage({ type: 'refresh' });
+    document.getElementById('content').innerHTML =
+      '<div class="empty-state">Refreshing...</div>';
+  }
+
+  function runSelected() {
+    if (!selectedId) { return; }
+    vscode.postMessage({ type: 'run', deviceId: selectedId });
+  }
+
+  function bootDevice(id, e) {
+    e.stopPropagation();
+    vscode.postMessage({ type: 'boot', deviceId: id });
+  }
+
+  function runDevice(id, e) {
+    e.stopPropagation();
+    selectedId = id;
+    vscode.postMessage({ type: 'run', deviceId: id });
+  }
+
+  function toggleMetro() {
+    vscode.postMessage({ type: 'metro' });
+  }
+
+  function selectDevice(id) {
+    selectedId = id;
+    document.querySelectorAll('.device-card').forEach(el => {
+      el.classList.toggle('selected', el.dataset.id === id);
+    });
+    // Enable the run button
+    document.getElementById('btn-run').disabled = false;
+  }
+
+  function renderDevices(data) {
+    devices = data;
+    const content = document.getElementById('content');
+
+    if (!devices.length) {
+      content.innerHTML = `
+        <div class="empty-state">
+          No devices found.<br/>
+          Install Xcode (iOS) or Android Studio (Android) to get started.
+        </div>`;
+      document.getElementById('btn-run').disabled = true;
+      return;
+    }
+
+    const ios = devices.filter(d => d.platform === 'ios');
+    const android = devices.filter(d => d.platform === 'android');
+    let html = '';
+
+    if (ios.length) {
+      const bootedCount = ios.filter(d => d.status === 'booted').length;
+      html += `<div class="section-label">iOS Simulators (${bootedCount} running)</div>`;
+      ios.forEach(d => {
+        const isBooted = d.status === 'booted';
+        html += `
+          <div class="device-card${d.id === selectedId ? ' selected' : ''}"
+               data-id="${d.id}"
+               onclick="selectDevice('${d.id}')">
+            <div class="device-icon ios">📱</div>
+            <div class="device-info">
+              <div class="device-name">${d.name}</div>
+              <div class="device-meta">
+                ${d.osVersion ? 'iOS ' + d.osVersion + ' · ' : ''}${isBooted ? '🟢 Running' : '⚫ Offline'}
+              </div>
+            </div>
+            <div class="device-actions">
+              ${!isBooted ? `<button class="action-btn boot-btn" onclick="bootDevice('${d.id}', event)" title="Boot Simulator">⏻</button>` : ''}
+              <button class="action-btn run-btn" onclick="runDevice('${d.id}', event)" title="${isBooted ? 'Run App' : 'Boot & Run App'}">▶</button>
+            </div>
+          </div>`;
+      });
+    }
+
+    if (android.length) {
+      const connectedCount = android.filter(d => d.status === 'connected').length;
+      html += `<div class="section-label">Android (${connectedCount} connected)</div>`;
+      android.forEach(d => {
+        const isOnline = d.status === 'connected';
+        html += `
+          <div class="device-card${d.id === selectedId ? ' selected' : ''}"
+               data-id="${d.id}"
+               onclick="selectDevice('${d.id}')">
+            <div class="device-icon android">🤖</div>
+            <div class="device-info">
+              <div class="device-name">${d.name}</div>
+              <div class="device-meta">
+                ${d.isUSB ? 'USB · ' : ''}${isOnline ? '🟢 Connected' : '⚫ AVD Offline'}
+              </div>
+            </div>
+            <div class="device-actions">
+              ${!isOnline ? `<button class="action-btn boot-btn" onclick="bootDevice('${d.id}', event)" title="Launch Emulator">⏻</button>` : ''}
+              <button class="action-btn run-btn" onclick="runDevice('${d.id}', event)" title="${isOnline ? 'Run App' : 'Launch & Run App'}">▶</button>
+            </div>
+          </div>`;
+      });
+    }
+
+    content.innerHTML = html;
+  }
+
+  // Receive messages from extension
+  window.addEventListener('message', event => {
+    const msg = event.data;
+    if (msg.type === 'devices') {
+      renderDevices(msg.data);
+    }
+    if (msg.type === 'metroStatus') {
+      metroRunning = msg.running;
+      const btn = document.getElementById('metro-btn');
+      if (metroRunning) {
+        btn.textContent = 'Stop';
+        btn.classList.add('running');
+      } else {
+        btn.textContent = 'Start';
+        btn.classList.remove('running');
+      }
+    }
+  });
+</script>
+</body>
+</html>

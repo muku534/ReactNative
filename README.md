@@ -1,40 +1,130 @@
-# ReactNative
+# ReactNative — VS Code Extension
 
-The ultimate efficiency tool for React Native developers. Create new projects directly from your VS Code Command Palette with a native, streamlined interface. 🚀
+The ultimate workspace companion for React Native developers. Create projects, manage devices, and run your app — all from VS Code. Zero terminal commands. 🚀
 
-ReactNative simplifies the initial setup of your mobile applications by providing a robust, non-intrusive project creation workflow. No more switching between VS Code and the terminal—keep your focus where it belongs: in the code.
-
-## Key Features
-
-- **Command Palette Integration**: Effortless project initialization via `Cmd+Shift+P` (macOS) or `Ctrl+Shift+P` (Windows/Linux).
-- **Native VS Code UI**: Interactive project naming and folder selection using the standard IDE interface.
-- **Background Execution**: Projects are initialized in the background using the native Progress API, ensuring zero disruption to your workflow.
-- **Real-time Output Logs**: Monitor the creation process through a dedicated `ReactNative Creator` Output channel.
-- **Platform-Specific Automation**: Automatic detection and optional installation of CocoaPods for iOS development on macOS.
-
-## Visual Walkthrough
-
-### 1. Start via Command Palette
-Press `Cmd+Shift+P` and type **`React Native: New Project`**.
-![Start Project](images/screenshot1.png)
-
-### 2. Confirm Initialization
-Confirm that you want to start a new project.
-![Confirm UI](images/screenshot2.png)
-
-### 3. Name Your Project
-Enter your desired application name (e.g., `MyAwesomeApp`).
-![Project Name](images/screenshot3.png)
-
-### 4. Background Progress
-A native progress bar will tell you exactly what's happening.
-![Progress Notification](images/screenshot4.png)
-
-## Requirements
-
-- [Node.js](https://nodejs.org/) (Version 16 or later recommended).
-- [React Native CLI](https://reactnative.dev/docs/environment-setup) correctly configured for your target platforms (Android/iOS).
+![Auto Arrange](images/auto-arrange.png)
 
 ---
 
-**Built for Developers, by Developers.** Stay productive and eliminate boilerplate friction with **ReactNative**.
+## ✨ What's New in v1.1.0 — Device Manager
+
+Run your React Native app directly from VS Code without opening Xcode, Android Studio, or typing a single terminal command.
+
+### 📱 Device Manager Sidebar
+A dedicated "RN Tools" panel in the Activity Bar that gives you full control over your development devices.
+
+### 🎬 Video Guide
+See the extension in action! Watch how easy it is to boot devices and run your app without leaving VS Code:
+
+![Demo Video](images/demo.gif)
+
+---
+
+## Key Features
+
+### 🛠️ Project Creation (v1.0)
+- **Command Palette Integration**: Create a new React Native project via `Cmd+Shift+P` → `React Native: New Project`
+- **Interactive Setup**: Choose folder, name your project, and optionally install CocoaPods — all through native VS Code UI
+- **Background Execution**: Projects initialize in the background with real-time progress notifications
+- **Output Logging**: Monitor every step through the dedicated `ReactNative Creator` output channel
+
+### 📱 Device Manager (v1.1)
+- **Device Detection**: Automatically detects all available iOS Simulators and Android Emulators
+- **One-Click Boot**: Boot any offline simulator or emulator directly from VS Code — no Xcode or Android Studio needed
+- **One-Click Run**: Select a device and run your app with a single click
+- **Auto Boot & Run**: Click Run on an offline device — the extension boots it first, then runs your app
+- **Metro Bundler Control**: Start and stop the Metro Bundler from the sidebar
+- **Auto Window Arrangement**: VS Code and the Simulator are automatically arranged side-by-side when the app launches (macOS)
+
+---
+
+## Visual Walkthrough
+
+### Project Creation
+
+#### 1. Start via Command Palette
+Press `Cmd+Shift+P` and type **`React Native: New Project`**.
+
+![Start Project](images/screenshot1.png)
+
+#### 2. Confirm Initialization
+Confirm that you want to start a new project.
+
+![Confirm UI](images/screenshot2.png)
+
+#### 3. Select Destination Folder
+Choose the directory where you want to create your project.
+
+![Select Folder](images/select-folder.png)
+
+#### 4. Name Your Project
+Enter your desired application name (e.g., `MyAwesomeApp`).
+
+![Project Name](images/screenshot3.png)
+
+#### 5. Background Progress
+A native progress bar will tell you exactly what's happening.
+
+![Progress Notification](images/screenshot4.png)
+
+---
+
+### Device Manager
+
+#### 6. Sidebar Panel — Loading
+Open the "RN Tools" panel from the Activity Bar. The extension loads your available devices.
+
+![Device Sidebar](images/device-sidebar.png)
+
+#### 7. Device List
+All iOS Simulators and Android Emulators are listed with their OS version and status (Running / Offline).
+
+![Device List](images/device-list.png)
+
+#### 8. Boot & Run
+Click the ▶ button on any device. If it's offline, the extension boots it automatically and then runs your app.
+
+![Device Booting](images/device-booting.png)
+
+#### 9. Auto Window Arrangement
+Once the simulator is ready, VS Code and the Simulator are automatically arranged side-by-side for the best coding experience.
+
+![Auto Arrange](images/auto-arrange.png)
+
+---
+
+## Requirements
+
+- [Node.js](https://nodejs.org/) (Version 16 or later recommended)
+- [React Native CLI](https://reactnative.dev/docs/environment-setup) correctly configured for your target platforms
+- **iOS**: Xcode installed (for simulator runtime — you don't need to open it manually anymore!)
+- **Android**: Android SDK with at least one AVD configured
+- **macOS**: Recommended for full experience (auto window arrangement is macOS-only)
+
+## Platform Support
+
+| Feature | macOS | Windows | Linux |
+|---|:---:|:---:|:---:|
+| Project Creation | ✅ | ✅ | ✅ |
+| iOS Simulator Detection | ✅ | — | — |
+| Android Emulator Detection | ✅ | ✅ | ✅ |
+| One-Click Boot & Run | ✅ | ✅ | ✅ |
+| Auto Window Arrangement | ✅ | Coming Soon | Coming Soon |
+| CocoaPods Installation | ✅ | — | — |
+
+## Release Notes
+
+### v1.1.0
+- 📱 **Device Manager**: Full sidebar panel with device detection, one-click boot, and run
+- 🪟 **Auto Window Arrangement**: VS Code + Simulator automatically arranged side-by-side
+- ⚡ **Metro Bundler Control**: Start/Stop Metro from the sidebar
+- 🤖 **Android AVD Support**: Detect and launch offline Android emulators
+
+### v1.0.0
+- 🛠️ Initial release with project creation via Command Palette
+- 📦 CocoaPods auto-installation support for macOS
+- 📊 Background progress notifications
+
+---
+
+**Built for Developers, by Developers.** Stop switching between VS Code, Xcode, Android Studio, and the terminal. Stay in the code. Stay productive. ⚡

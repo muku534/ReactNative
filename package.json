@@ -1,9 +1,9 @@
 {
   "name": "reactnative",
-  "displayName": "ReactNative",
-  "description": "Streamline React Native project creation with a powerful, command-palette driven interface.",
+  "displayName": "React Native Companion",
+  "description": "Streamline React Native development — project creation, device management, and one-click run from VS Code.",
   "icon": "images/icon.png",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "publisher": "muku534",
   "repository": {
     "type": "git",
@@ -22,7 +22,10 @@
     "project",
     "creator",
     "productivity",
-    "boilerplate"
+    "device-manager",
+    "simulator",
+    "emulator",
+    "metro"
   ],
   "activationEvents": [],
   "main": "./out/extension.js",
@@ -32,8 +35,31 @@
         "command": "reactnative.newProject",
         "title": "React Native: New Project",
         "category": "ReactNative"
+      },
+      {
+        "command": "reactnative.refreshDevices",
+        "title": "Refresh Devices",
+        "category": "ReactNative"
       }
-    ]
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "rn-device-panel",
+          "title": "RN Tools",
+          "icon": "images/device-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "rn-device-panel": [
+        {
+          "type": "webview",
+          "id": "rnDeviceView",
+          "name": "Devices"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",

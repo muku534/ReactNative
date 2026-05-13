@@ -2,8 +2,11 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as os from 'os';
 import { exec } from 'child_process';
+import { SidebarProvider } from './sidebarProvider';
 
 export function activate(context: vscode.ExtensionContext) {
+
+    // ── EXISTING: New Project Command ─────────────────────────
     let disposable = vscode.commands.registerCommand('reactnative.newProject', async () => {
         // 1. Template selection (Top Quick Pick UI)
         const selectedTemplate = await vscode.window.showQuickPick(['Create a new React Native project'], {
@@ -101,6 +104,22 @@ export function activate(context: vscode.ExtensionContext) {
     });
 
     context.subscriptions.push(disposable);
+
+    // ── NEW: Sidebar Device Manager ───────────────────────────
+    const sidebarProvider = new SidebarProvider(context.extensionUri);
+
+    context.subscriptions.push(
+        vscode.window.registerWebviewViewProvider(
+            'rnDeviceView',
+            sidebarProvider
+        )
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('reactnative.refreshDevices', () => {
+            sidebarProvider.refresh();
+        })
+    );
 }
 
 export function deactivate() { }
