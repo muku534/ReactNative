@@ -8,14 +8,17 @@ export function activate(context: vscode.ExtensionContext) {
 
     // ── EXISTING: New Project Command ─────────────────────────
     let disposable = vscode.commands.registerCommand('reactnative.newProject', async () => {
-        // 1. Template selection (Top Quick Pick UI)
-        const selectedTemplate = await vscode.window.showQuickPick(['Create a new React Native project'], {
-            placeHolder: 'Select a template or type to create a new project'
-        });
+        // 1. Project Type selection (Quick Pick UI)
+        const selectedTemplate = await vscode.window.showQuickPick(
+            ['React Native CLI (Bare)', 'Expo (Managed Workflow)'],
+            { placeHolder: 'Select a project type to create' }
+        );
 
         if (!selectedTemplate) {
             return;
         }
+
+        const isExpo = selectedTemplate.includes('Expo');
 
         // 2. Folder selection
         const folderUri = await vscode.window.showOpenDialog({
@@ -36,8 +39,8 @@ export function activate(context: vscode.ExtensionContext) {
             prompt: 'Enter project name',
             placeHolder: 'e.g. MyApp',
             validateInput: (value) => {
-                if (!value || value.includes(' ') || !/^[a-zA-Z0-9]+$/.test(value)) {
-                    return 'Project name must be alphanumeric and contain no spaces';
+                if (!value || value.includes(' ') || !/^[a-zA-Z0-9_-]+$/.test(value)) {
+                    return 'Project name must contain only alphanumeric characters, hyphens, or underscores';
                 }
                 return null;
             }
@@ -47,17 +50,23 @@ export function activate(context: vscode.ExtensionContext) {
             return;
         }
 
-        // 4. CocoaPods prompt (macOS only)
-        let installPods = false;
-        if (os.platform() === 'darwin') {
-            const podChoice = await vscode.window.showQuickPick(['Yes', 'No'], {
-                placeHolder: 'Do you want to install CocoaPods now? (Recommended for iOS)'
-            });
-            installPods = podChoice === 'Yes';
-        }
+        let command = '';
 
-        // 5. Assemble command (Clean and Robust)
-        const command = `npx -y @react-native-community/cli init ${projectName} --install-pods ${installPods}`;
+        if (isExpo) {
+            // Expo project command
+            command = `npx create-expo-app ${projectName}`;
+        } else {
+            // React Native CLI command
+            // 4. CocoaPods prompt (macOS only, for CLI only)
+            let installPods = false;
+            if (os.platform() === 'darwin') {
+                const podChoice = await vscode.window.showQuickPick(['Yes', 'No'], {
+                    placeHolder: 'Do you want to install CocoaPods now? (Recommended for iOS)'
+                });
+                installPods = podChoice === 'Yes';
+            }
+            command = `npx -y @react-native-community/cli init ${projectName} --install-pods ${installPods}`;
+        }
 
         // 6. Run command with Progress API (Bypass terminal)
         const outputChannel = vscode.window.createOutputChannel("ReactNative Creator");

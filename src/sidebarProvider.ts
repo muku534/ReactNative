@@ -3,6 +3,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { getAllDevices, Device, bootIOSSimulator, launchAndroidEmulator } from './deviceManager';
 import { waitThenArrange } from './windowManager';
+import { isExpoProject } from './utils';
 
 export class SidebarProvider implements vscode.WebviewViewProvider {
   private _view?: vscode.WebviewView;
@@ -79,19 +80,32 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
           });
           terminal.show();
 
+          const isExpo = isExpoProject(projectPath);
+          vscode.window.showInformationMessage(
+            isExpo ? 'Detected Expo project. Running Expo commands...' : 'Detected React Native CLI project. Running CLI commands...'
+          );
+
           if (device.platform === 'ios') {
-            // Use the actual UDID (not the avd: prefix)
-            terminal.sendText(
-              `npx react-native run-ios --udid ${device.id}`
-            );
-          } else {
-            // For AVD devices, don't pass deviceId — let RN CLI pick the running emulator
-            if (device.avdName) {
-              terminal.sendText(`npx react-native run-android`);
+            if (isExpo) {
+              terminal.sendText(`npx expo start --ios`);
             } else {
+              // Use the actual UDID (not the avd: prefix)
               terminal.sendText(
-                `npx react-native run-android --deviceId ${device.id}`
+                `npx react-native run-ios --udid ${device.id}`
               );
+            }
+          } else {
+            if (isExpo) {
+              terminal.sendText(`npx expo start --android`);
+            } else {
+              // For AVD devices, don't pass deviceId — let RN CLI pick the running emulator
+              if (device.avdName) {
+                terminal.sendText(`npx react-native run-android`);
+              } else {
+                terminal.sendText(
+                  `npx react-native run-android --deviceId ${device.id}`
+                );
+              }
             }
           }
 
@@ -148,7 +162,12 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
             cwd: projectPath
           });
           metro.show();
-          metro.sendText('npx react-native start');
+          const isExpo = isExpoProject(projectPath);
+          if (isExpo) {
+            metro.sendText('npx expo start');
+          } else {
+            metro.sendText('npx react-native start');
+          }
           this._view?.webview.postMessage({ type: 'metroStatus', running: true });
           break;
         }
