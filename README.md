@@ -1,6 +1,6 @@
 # ReactNative — VS Code Extension
 
-The ultimate workspace companion for React Native developers. Create projects, manage devices, and run your app — all from VS Code. Zero terminal commands. 🚀
+The ultimate workspace companion for React Native CLI and Expo developers. Create projects, manage devices, and run your app — all from VS Code. Zero terminal commands. 🚀
 
 ![Auto Arrange](images/auto-arrange.png)
 
@@ -22,6 +22,9 @@ See the extension in action! Watch how easy it is to boot devices and run your a
 
 ## Key Features
 
+### 🚀 Expo Support
+- **Full Integration**: Complete support for Expo — from project creation to device boot and app execution.
+
 ### 🛠️ Project Creation (v1.0)
 - **Command Palette Integration**: Create a new React Native project via `Cmd+Shift+P` → `React Native: New Project`
 - **Interactive Setup**: Choose folder, name your project, and optionally install CocoaPods — all through native VS Code UI
@@ -34,7 +37,7 @@ See the extension in action! Watch how easy it is to boot devices and run your a
 - **One-Click Run**: Select a device and run your app with a single click
 - **Auto Boot & Run**: Click Run on an offline device — the extension boots it first, then runs your app
 - **Metro Bundler Control**: Start and stop the Metro Bundler from the sidebar
-- **Auto Window Arrangement**: VS Code and the Simulator are automatically arranged side-by-side when the app launches (macOS)
+- **Auto Window Arrangement**: VS Code and the Simulator are automatically arranged side-by-side when the app launches (macOS and Windows)
 
 ---
 
@@ -99,7 +102,7 @@ Once the simulator is ready, VS Code and the Simulator are automatically arrange
 - [React Native CLI](https://reactnative.dev/docs/environment-setup) correctly configured for your target platforms
 - **iOS**: Xcode installed (for simulator runtime — you don't need to open it manually anymore!)
 - **Android**: Android SDK with at least one AVD configured
-- **macOS**: Recommended for full experience (auto window arrangement is macOS-only)
+- **macOS/Windows**: Recommended for full experience (auto window arrangement is supported on macOS and Windows)
 
 ## Platform Support
 
@@ -109,14 +112,18 @@ Once the simulator is ready, VS Code and the Simulator are automatically arrange
 | iOS Simulator Detection | ✅ | — | — |
 | Android Emulator Detection | ✅ | ✅ | ✅ |
 | One-Click Boot & Run | ✅ | ✅ | ✅ |
-| Auto Window Arrangement | ✅ | Coming Soon | Coming Soon |
+| Auto Window Arrangement | ✅ | ✅ | Coming Soon |
 | CocoaPods Installation | ✅ | — | — |
 
 ## Release Notes
 
+### v1.2.0 (Latest)
+- 🚀 **Expo Support**: Added full support for Expo project creation, device booting, and app execution.
+- 🪟 **Windows Auto Window Arrangement**: VS Code and Android Emulators are now automatically arranged side-by-side on Windows!
+
 ### v1.1.0
 - 📱 **Device Manager**: Full sidebar panel with device detection, one-click boot, and run
-- 🪟 **Auto Window Arrangement**: VS Code + Simulator automatically arranged side-by-side
+- 🪟 **Auto Window Arrangement**: VS Code + Simulator automatically arranged side-by-side (macOS)
 - ⚡ **Metro Bundler Control**: Start/Stop Metro from the sidebar
 - 🤖 **Android AVD Support**: Detect and launch offline Android emulators
 

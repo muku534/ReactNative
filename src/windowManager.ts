@@ -9,8 +9,10 @@ import * as vscode from 'vscode';
  * then auto-arranges: VS Code = left 60%, Simulator = right 40%
  */
 export function waitThenArrange(platform: 'ios' | 'android') {
-  // Only supported on macOS
-  if (os.platform() !== 'darwin') {
+  if (platform === 'ios' && os.platform() !== 'darwin') {
+    return;
+  }
+  if (platform === 'android' && os.platform() !== 'darwin' && os.platform() !== 'win32') {
     return;
   }
 
@@ -76,15 +78,95 @@ function isSimulatorReady(platform: 'ios' | 'android'): Promise<boolean> {
         }
       );
     } else {
-      exec('pgrep -f qemu-system', (err) => {
-        resolve(!err);
-      });
+      if (os.platform() === 'win32') {
+        exec('tasklist | findstr qemu-system', (err) => {
+          resolve(!err);
+        });
+      } else {
+        exec('pgrep -f qemu-system', (err) => {
+          resolve(!err);
+        });
+      }
     }
   });
 }
 
 function arrangeWindows(platform: 'ios' | 'android'): Promise<void> {
   return new Promise((resolve) => {
+    if (os.platform() === 'win32') {
+      const psScript = `
+Add-Type @"
+using System;
+using System.Runtime.InteropServices;
+public class Win32 {
+    [DllImport("user32.dll")]
+    public static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
+    
+    [DllImport("user32.dll")]
+    public static extern bool GetWindowRect(IntPtr hwnd, out RECT lpRect);
+
+    [DllImport("user32.dll")]
+    public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct RECT {
+        public int Left;
+        public int Top;
+        public int Right;
+        public int Bottom;
+    }
+}
+"@
+
+Add-Type -AssemblyName System.Windows.Forms
+$screen = [System.Windows.Forms.Screen]::PrimaryScreen.WorkingArea
+$screenW = $screen.Width
+$screenH = $screen.Height
+
+$emu = Get-Process | Where-Object { $_.ProcessName -like "*qemu-system*" -and $_.MainWindowTitle -ne "" } | Select-Object -First 1
+$simW = 400
+
+if ($emu -and $emu.MainWindowHandle -ne [IntPtr]::Zero) {
+    $rect = New-Object Win32+RECT
+    [Win32]::GetWindowRect($emu.MainWindowHandle, [ref]$rect) | Out-Null
+    $simW = $rect.Right - $rect.Left
+    if ($simW -le 0) { $simW = 400 }
+    
+    $vsW = $screenW - $simW
+    if ($vsW -lt ($screenW * 0.5)) { $vsW = [math]::Floor($screenW * 0.6) }
+    $simX = $vsW
+    
+    [Win32]::ShowWindow($emu.MainWindowHandle, 9) | Out-Null
+    [Win32]::SetWindowPos($emu.MainWindowHandle, [IntPtr]::Zero, $simX, 0, $simW, $screenH, 0x0040) | Out-Null
+} else {
+    $vsW = $screenW - $simW
+    if ($vsW -lt ($screenW * 0.5)) { $vsW = [math]::Floor($screenW * 0.6) }
+}
+
+$vscodes = Get-Process | Where-Object { $_.ProcessName -eq "Code" -and $_.MainWindowTitle -ne "" }
+foreach ($vscode in $vscodes) {
+    if ($vscode.MainWindowHandle -ne [IntPtr]::Zero) {
+        [Win32]::ShowWindow($vscode.MainWindowHandle, 9) | Out-Null
+        [Win32]::SetWindowPos($vscode.MainWindowHandle, [IntPtr]::Zero, 0, 0, $vsW, $screenH, 0x0040) | Out-Null
+    }
+}
+`;
+      const tmpFile = path.join(os.tmpdir(), 'rn_arrange_windows.ps1');
+      fs.writeFileSync(tmpFile, psScript, 'utf8');
+
+      exec(`powershell -ExecutionPolicy Bypass -File "${tmpFile}"`, (err, _stdout, stderr) => {
+        try { fs.unlinkSync(tmpFile); } catch { /* ignore */ }
+        if (err) {
+          console.error('Window arrange error:', err, stderr);
+          vscode.window.showWarningMessage(
+            `Could not arrange windows: ${stderr || err.message}`
+          );
+        }
+        resolve();
+      });
+      return;
+    }
+
     const scriptLines = [
       'use framework "AppKit"',
       '',
