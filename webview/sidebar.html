@@ -31,6 +31,11 @@
     opacity: 0.6;
   }
 
+  .header-actions {
+    display: flex;
+    gap: 2px;
+  }
+
   .icon-btn {
     background: none;
     border: none;
@@ -46,6 +51,9 @@
 
   .icon-btn:hover { opacity: 1; background: var(--vscode-toolbar-hoverBackground); }
 
+  .icon-btn.wifi-btn { color: #007aff; opacity: 0.8; font-size: 13px; }
+  .icon-btn.wifi-btn:hover { opacity: 1; }
+
   .section-label {
     font-size: 10px;
     font-weight: 600;
@@ -54,6 +62,9 @@
     opacity: 0.5;
     padding: 0 2px;
     margin: 12px 0 5px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
   }
 
   .device-card {
@@ -90,6 +101,7 @@
 
   .device-icon.ios { background: rgba(0, 122, 255, 0.15); }
   .device-icon.android { background: rgba(61, 220, 132, 0.15); }
+  .device-icon.physical { background: rgba(255, 159, 10, 0.15); }
 
   .device-info { flex: 1; min-width: 0; }
 
@@ -106,7 +118,22 @@
     font-size: 10px;
     opacity: 0.55;
     margin-top: 1px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
   }
+
+  .conn-badge {
+    font-size: 9px;
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+  }
+
+  .conn-badge.usb { background: rgba(52, 199, 89, 0.15); color: #34c759; }
+  .conn-badge.wifi { background: rgba(0, 122, 255, 0.15); color: #007aff; }
+  .conn-badge.sim { background: rgba(142, 142, 147, 0.15); color: #8e8e93; }
 
   .status-dot {
     width: 6px;
@@ -145,6 +172,12 @@
 
   .action-btn.run-btn { color: #007aff; opacity: 0.7; }
   .action-btn.run-btn:hover { opacity: 1; }
+
+  .action-btn.mirror-btn { color: #af52de; opacity: 0.7; font-size: 11px; }
+  .action-btn.mirror-btn:hover { opacity: 1; }
+
+  .action-btn.disconnect-btn { color: #ff453a; opacity: 0.7; font-size: 11px; }
+  .action-btn.disconnect-btn:hover { opacity: 1; }
 
   .run-bar {
     display: flex;
@@ -239,7 +272,10 @@
 
 <div class="header">
   <span class="header-title">RN Devices</span>
-  <button class="icon-btn" onclick="refresh()" title="Refresh">↻</button>
+  <div class="header-actions">
+    <button class="icon-btn wifi-btn" onclick="connectWifi()" title="Connect WiFi Device">📡</button>
+    <button class="icon-btn" onclick="refresh()" title="Refresh">↻</button>
+  </div>
 </div>
 
 <div id="content">
@@ -287,6 +323,20 @@
     vscode.postMessage({ type: 'run', deviceId: id });
   }
 
+  function mirrorDevice(id, e) {
+    e.stopPropagation();
+    vscode.postMessage({ type: 'mirror', deviceId: id });
+  }
+
+  function disconnectDevice(id, e) {
+    e.stopPropagation();
+    vscode.postMessage({ type: 'disconnectWifi', deviceId: id });
+  }
+
+  function connectWifi() {
+    vscode.postMessage({ type: 'connectWifi' });
+  }
+
   function toggleMetro() {
     vscode.postMessage({ type: 'metro' });
   }
@@ -300,6 +350,68 @@
     document.getElementById('btn-run').disabled = false;
   }
 
+  function getDeviceIcon(d) {
+    if (d.isPhysical) { return '📲'; }
+    if (d.platform === 'ios') { return '📱'; }
+    return '🤖';
+  }
+
+  function getIconClass(d) {
+    if (d.isPhysical) { return 'physical'; }
+    return d.platform;
+  }
+
+  function getConnBadge(d) {
+    if (d.connectionType === 'usb') { return '<span class="conn-badge usb">USB</span>'; }
+    if (d.connectionType === 'wifi') { return '<span class="conn-badge wifi">WiFi</span>'; }
+    if (d.connectionType === 'simulator') { return '<span class="conn-badge sim">SIM</span>'; }
+    if (d.connectionType === 'emulator') { return '<span class="conn-badge sim">EMU</span>'; }
+    return '';
+  }
+
+  function renderDeviceCard(d) {
+    const isOnline = d.status === 'booted' || d.status === 'connected';
+    const isWifi = d.connectionType === 'wifi';
+    const statusText = isOnline ? '🟢 Connected' : '⚫ Offline';
+    const osText = d.osVersion ? (d.platform === 'ios' ? 'iOS ' : 'Android ') + d.osVersion + ' · ' : '';
+
+    let actionsHtml = '';
+
+    // Mirror button for connected physical devices
+    if (isOnline && d.isPhysical) {
+      actionsHtml += `<button class="action-btn mirror-btn" onclick="mirrorDevice('${d.id}', event)" title="Mirror Screen">🪞</button>`;
+    }
+
+    // Disconnect button for WiFi devices
+    if (isWifi) {
+      actionsHtml += `<button class="action-btn disconnect-btn" onclick="disconnectDevice('${d.id}', event)" title="Disconnect WiFi">✕</button>`;
+    }
+
+    // Boot button for offline virtual devices
+    if (!isOnline && !d.isPhysical) {
+      actionsHtml += `<button class="action-btn boot-btn" onclick="bootDevice('${d.id}', event)" title="Boot Device">⏻</button>`;
+    }
+
+    // Run button always
+    actionsHtml += `<button class="action-btn run-btn" onclick="runDevice('${d.id}', event)" title="${isOnline ? 'Run App' : 'Boot & Run App'}">▶</button>`;
+
+    return `
+      <div class="device-card${d.id === selectedId ? ' selected' : ''}"
+           data-id="${d.id}"
+           onclick="selectDevice('${d.id}')">
+        <div class="device-icon ${getIconClass(d)}">${getDeviceIcon(d)}</div>
+        <div class="device-info">
+          <div class="device-name">${d.name}</div>
+          <div class="device-meta">
+            ${getConnBadge(d)} ${osText}${statusText}
+          </div>
+        </div>
+        <div class="device-actions">
+          ${actionsHtml}
+        </div>
+      </div>`;
+  }
+
   function renderDevices(data) {
     devices = data;
     const content = document.getElementById('content');
@@ -308,62 +420,37 @@
       content.innerHTML = `
         <div class="empty-state">
           No devices found.<br/>
-          Install Xcode (iOS) or Android Studio (Android) to get started.
+          Connect a device via USB/WiFi, or install Xcode (iOS) / Android Studio (Android).
         </div>`;
       document.getElementById('btn-run').disabled = true;
       return;
     }
 
-    const ios = devices.filter(d => d.platform === 'ios');
-    const android = devices.filter(d => d.platform === 'android');
+    const physical = devices.filter(d => d.isPhysical);
+    const iosSims = devices.filter(d => d.platform === 'ios' && !d.isPhysical);
+    const androidVirtual = devices.filter(d => d.platform === 'android' && !d.isPhysical);
+
     let html = '';
 
-    if (ios.length) {
-      const bootedCount = ios.filter(d => d.status === 'booted').length;
-      html += `<div class="section-label">iOS Simulators (${bootedCount} running)</div>`;
-      ios.forEach(d => {
-        const isBooted = d.status === 'booted';
-        html += `
-          <div class="device-card${d.id === selectedId ? ' selected' : ''}"
-               data-id="${d.id}"
-               onclick="selectDevice('${d.id}')">
-            <div class="device-icon ios">📱</div>
-            <div class="device-info">
-              <div class="device-name">${d.name}</div>
-              <div class="device-meta">
-                ${d.osVersion ? 'iOS ' + d.osVersion + ' · ' : ''}${isBooted ? '🟢 Running' : '⚫ Offline'}
-              </div>
-            </div>
-            <div class="device-actions">
-              ${!isBooted ? `<button class="action-btn boot-btn" onclick="bootDevice('${d.id}', event)" title="Boot Simulator">⏻</button>` : ''}
-              <button class="action-btn run-btn" onclick="runDevice('${d.id}', event)" title="${isBooted ? 'Run App' : 'Boot & Run App'}">▶</button>
-            </div>
-          </div>`;
-      });
+    // ── Physical Devices Section ──
+    if (physical.length) {
+      const connectedCount = physical.filter(d => d.status === 'connected').length;
+      html += `<div class="section-label">📲 Physical Devices (${connectedCount} connected)</div>`;
+      physical.forEach(d => { html += renderDeviceCard(d); });
     }
 
-    if (android.length) {
-      const connectedCount = android.filter(d => d.status === 'connected').length;
-      html += `<div class="section-label">Android (${connectedCount} connected)</div>`;
-      android.forEach(d => {
-        const isOnline = d.status === 'connected';
-        html += `
-          <div class="device-card${d.id === selectedId ? ' selected' : ''}"
-               data-id="${d.id}"
-               onclick="selectDevice('${d.id}')">
-            <div class="device-icon android">🤖</div>
-            <div class="device-info">
-              <div class="device-name">${d.name}</div>
-              <div class="device-meta">
-                ${d.isUSB ? 'USB · ' : ''}${isOnline ? '🟢 Connected' : '⚫ AVD Offline'}
-              </div>
-            </div>
-            <div class="device-actions">
-              ${!isOnline ? `<button class="action-btn boot-btn" onclick="bootDevice('${d.id}', event)" title="Launch Emulator">⏻</button>` : ''}
-              <button class="action-btn run-btn" onclick="runDevice('${d.id}', event)" title="${isOnline ? 'Run App' : 'Launch & Run App'}">▶</button>
-            </div>
-          </div>`;
-      });
+    // ── iOS Simulators Section ──
+    if (iosSims.length) {
+      const bootedCount = iosSims.filter(d => d.status === 'booted').length;
+      html += `<div class="section-label">📱 iOS Simulators (${bootedCount} running)</div>`;
+      iosSims.forEach(d => { html += renderDeviceCard(d); });
+    }
+
+    // ── Android Virtual Section ──
+    if (androidVirtual.length) {
+      const connectedCount = androidVirtual.filter(d => d.status === 'connected').length;
+      html += `<div class="section-label">🤖 Android Emulators (${connectedCount} connected)</div>`;
+      androidVirtual.forEach(d => { html += renderDeviceCard(d); });
     }
 
     content.innerHTML = html;

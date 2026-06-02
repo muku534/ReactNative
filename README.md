@@ -6,6 +6,23 @@ The ultimate workspace companion for React Native CLI and Expo developers. Creat
 
 ---
 
+## ✨ What's New in v1.3.0 — Real Physical Devices & Wireless Debugging
+
+Connect your physical devices (iOS & Android) to VS Code via USB or Wi-Fi, run apps directly, and even control them from your desktop/laptop!
+
+### 📡 Wireless Debugging & Pairing Wizard
+Pair your Android device wirelessly using a QR code or standard 6-digit pairing code (Android 11+), or connect iOS devices wirelessly. No cables required.
+
+### 🪞 Direct Device Mirroring & Interaction
+Control your physical Android device directly from your laptop or desktop using integrated high-performance screen mirroring (`scrcpy`). Access and interact with your app in real-time.
+
+### 🎬 Video Walkthrough (Real Devices)
+See how you can connect your physical device, run the app, and operate it wirelessly from your computer:
+
+![Physical Device Demo](images/v1.3.0.gif)
+
+---
+
 ## ✨ What's New in v1.1.0 — Device Manager
 
 Run your React Native app directly from VS Code without opening Xcode, Android Studio, or typing a single terminal command.
@@ -22,7 +39,13 @@ See the extension in action! Watch how easy it is to boot devices and run your a
 
 ## Key Features
 
-### 🚀 Expo Support
+### 🔌 Physical Devices (v1.3)
+- **USB & Wi-Fi Support**: Detect and run your app on real iOS and Android physical devices.
+- **Wireless Connection Wizard**: Connect to Android 11+ via Wi-Fi using QR codes or Pairing Codes.
+- **Direct Desktop Mirroring**: View and interactively control your physical Android device directly from your laptop/desktop.
+- **iOS Developer Pre-checks**: Automatic validation of Apple Developer signing profiles before running.
+
+### 🚀 Expo Support (v1.2)
 - **Full Integration**: Complete support for Expo — from project creation to device boot and app execution.
 
 ### 🛠️ Project Creation (v1.0)
@@ -114,10 +137,18 @@ Once the simulator is ready, VS Code and the Simulator are automatically arrange
 | One-Click Boot & Run | ✅ | ✅ | ✅ |
 | Auto Window Arrangement | ✅ | ✅ | Coming Soon |
 | CocoaPods Installation | ✅ | — | — |
+| Physical Devices USB/Wi-Fi | ✅ | ✅ | ✅ |
+| Direct Desktop Mirroring (scrcpy) | ✅ | ✅ | ✅ |
 
 ## Release Notes
 
-### v1.2.0 (Latest)
+### v1.3.0 (Latest)
+- 🔌 **Physical Device Support**: Auto-detect physical iPhones and Android devices connected via USB or Wi-Fi.
+- 📡 **Wireless Debugging**: Connect Android devices wirelessly using QR codes or pairing codes without needing a cable.
+- 🪞 **Direct Desktop Mirroring**: Control and mirror your physical Android device directly from your laptop via `scrcpy`.
+- 🔑 **iOS Signing Pre-checks**: Alerts developers about required Apple Developer signing configurations before attempting to run on real devices.
+
+### v1.2.0
 - 🚀 **Expo Support**: Added full support for Expo project creation, device booting, and app execution.
 - 🪟 **Windows Auto Window Arrangement**: VS Code and Android Emulators are now automatically arranged side-by-side on Windows!
 

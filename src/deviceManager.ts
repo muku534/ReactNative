@@ -8,6 +8,8 @@ export interface Device {
   status: 'booted' | 'offline' | 'connected';
   osVersion?: string;
   isUSB?: boolean;
+  isPhysical?: boolean;
+  connectionType?: 'usb' | 'wifi' | 'simulator' | 'emulator';
   avdName?: string; // For Android AVDs
 }
 
@@ -33,7 +35,9 @@ export async function getIOSSimulators(): Promise<Device[]> {
                 name: d.name,
                 platform: 'ios',
                 status: d.state === 'Booted' ? 'booted' : 'offline',
-                osVersion: version
+                osVersion: version,
+                isPhysical: false,
+                connectionType: 'simulator'
               });
             }
           });
@@ -41,6 +45,72 @@ export async function getIOSSimulators(): Promise<Device[]> {
 
         // Booted devices first
         devices.sort((a) => (a.status === 'booted' ? -1 : 1));
+        resolve(devices);
+      } catch {
+        resolve([]);
+      }
+    });
+  });
+}
+
+// ── iOS Physical Devices (USB + WiFi) ───────────────────────
+export async function getIOSPhysicalDevices(): Promise<Device[]> {
+  if (os.platform() !== 'darwin') { return []; }
+
+  return new Promise((resolve) => {
+    exec('xcrun xctrace list devices', (err, stdout) => {
+      if (err) { return resolve([]); }
+
+      try {
+        const lines = stdout.split('\n');
+        const devices: Device[] = [];
+
+        // xctrace output format:
+        // == Devices ==
+        // Device Name (OS Version) (UDID)
+        // == Simulators ==
+        // ...
+        let inDevicesSection = false;
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+
+          if (trimmed === '== Devices ==') {
+            inDevicesSection = true;
+            continue;
+          }
+          if (trimmed === '== Simulators ==' || trimmed.startsWith('== ')) {
+            inDevicesSection = false;
+            continue;
+          }
+
+          if (inDevicesSection && trimmed.length > 0) {
+            // Parse: "iPhone 15 Pro (17.0) (00008101-XXXX)"
+            const deviceMatch = trimmed.match(/^(.+?)\s+\(([^)]+)\)\s+\(([A-Fa-f0-9-]+)\)$/);
+            if (deviceMatch) {
+              const deviceName = deviceMatch[1].trim();
+              const osVersionStr = deviceMatch[2].trim();
+              const udid = deviceMatch[3].trim();
+
+              // Skip the Mac itself (it also appears in the list)
+              if (deviceName.includes('Mac') || deviceName.includes('MacBook')) {
+                continue;
+              }
+
+              devices.push({
+                id: udid,
+                name: deviceName,
+                platform: 'ios',
+                status: 'connected',
+                osVersion: osVersionStr,
+                isUSB: true,
+                isPhysical: true,
+                connectionType: 'usb' // Could be WiFi too, xctrace doesn't distinguish
+              });
+            }
+          }
+        }
+
         resolve(devices);
       } catch {
         resolve([]);
@@ -66,7 +136,7 @@ export async function bootIOSSimulator(udid: string): Promise<boolean> {
   });
 }
 
-// ── Android: Connected devices (USB + running emulators) ────
+// ── Android: Connected devices (USB + WiFi + running emulators) ─
 export async function getAndroidDevices(): Promise<Device[]> {
   return new Promise((resolve) => {
     exec('adb devices -l', (err, stdout) => {
@@ -79,17 +149,26 @@ export async function getAndroidDevices(): Promise<Device[]> {
 
       const devices: Device[] = lines.map(line => {
         const parts = line.split(/\s+/);
-        const isUSB = !parts[0].startsWith('emulator');
+        const deviceId = parts[0];
+        const isEmulator = deviceId.startsWith('emulator');
+        const isWiFi = deviceId.includes(':'); // WiFi devices show as IP:port
+        const isUSB = !isEmulator && !isWiFi;
         const modelMatch = line.match(/model:(\S+)/);
 
+        let connectionType: 'usb' | 'wifi' | 'emulator' = 'emulator';
+        if (isUSB) { connectionType = 'usb'; }
+        if (isWiFi && !isEmulator) { connectionType = 'wifi'; }
+
         return {
-          id: parts[0],
+          id: deviceId,
           name: modelMatch
             ? modelMatch[1].replace(/_/g, ' ')
-            : (isUSB ? 'Android Device' : 'Android Emulator'),
+            : (isEmulator ? 'Android Emulator' : (isWiFi ? 'Android (WiFi)' : 'Android Device')),
           platform: 'android' as const,
           status: 'connected' as const,
-          isUSB
+          isUSB,
+          isPhysical: !isEmulator,
+          connectionType
         };
       });
 
@@ -115,7 +194,9 @@ export async function getAndroidAVDs(): Promise<Device[]> {
         name: name.replace(/_/g, ' '),
         platform: 'android' as const,
         status: 'offline' as const,
-        avdName: name
+        avdName: name,
+        isPhysical: false,
+        connectionType: 'emulator' as const
       }));
 
       resolve(devices);
@@ -139,13 +220,78 @@ export async function launchAndroidEmulator(avdName: string): Promise<boolean> {
   });
 }
 
+// ── Android WiFi: Pair device (Android 11+) ─────────────────
+export async function pairAndroidWiFi(ip: string, port: string, code: string): Promise<{ success: boolean; message: string }> {
+  return new Promise((resolve) => {
+    exec(`adb pair ${ip}:${port} ${code}`, (err, stdout, stderr) => {
+      const output = stdout + stderr;
+      if (err || output.toLowerCase().includes('failed')) {
+        resolve({ success: false, message: output || err?.message || 'Pairing failed' });
+      } else {
+        resolve({ success: true, message: output || 'Paired successfully' });
+      }
+    });
+  });
+}
+
+// ── Android WiFi: Connect to device ─────────────────────────
+export async function connectAndroidWiFi(ip: string, port: string): Promise<{ success: boolean; message: string }> {
+  return new Promise((resolve) => {
+    exec(`adb connect ${ip}:${port}`, (err, stdout, stderr) => {
+      const output = stdout + stderr;
+      if (err || output.toLowerCase().includes('failed') || output.toLowerCase().includes('unable')) {
+        resolve({ success: false, message: output || err?.message || 'Connection failed' });
+      } else {
+        resolve({ success: true, message: output || 'Connected successfully' });
+      }
+    });
+  });
+}
+
+// ── Android WiFi: Switch USB device to WiFi mode (older Android) ─
+export async function switchToWiFiMode(port: string = '5555'): Promise<{ success: boolean; message: string }> {
+  return new Promise((resolve) => {
+    exec(`adb tcpip ${port}`, (err, stdout, stderr) => {
+      const output = stdout + stderr;
+      if (err) {
+        resolve({ success: false, message: output || err?.message || 'Failed to switch to WiFi mode' });
+      } else {
+        resolve({ success: true, message: output || `Switched to TCP/IP mode on port ${port}` });
+      }
+    });
+  });
+}
+
+// ── Android WiFi: Disconnect a WiFi device ──────────────────
+export async function disconnectAndroidWiFi(deviceId: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    exec(`adb disconnect ${deviceId}`, (err) => {
+      resolve(!err);
+    });
+  });
+}
+
+// ── Check if scrcpy is installed ────────────────────────────
+export async function checkScrcpyInstalled(): Promise<boolean> {
+  return new Promise((resolve) => {
+    exec('scrcpy --version', (err) => {
+      resolve(!err);
+    });
+  });
+}
+
 // ── Get ALL Devices (merged & deduplicated) ─────────────────
 export async function getAllDevices(): Promise<Device[]> {
-  const [iosSimulators, androidConnected, androidAVDs] = await Promise.all([
+  const [iosSimulators, iosPhysical, androidConnected, androidAVDs] = await Promise.all([
     getIOSSimulators(),
+    getIOSPhysicalDevices(),
     getAndroidDevices(),
     getAndroidAVDs()
   ]);
+
+  // Deduplicate iOS: remove physical devices that are also in simulators list (by UDID)
+  const simUdids = new Set(iosSimulators.map(s => s.id));
+  const uniquePhysical = iosPhysical.filter(p => !simUdids.has(p.id));
 
   // Merge Android: connected devices take priority over AVD listing
   const offlineAVDs = androidAVDs.filter(avd => {
@@ -156,5 +302,14 @@ export async function getAllDevices(): Promise<Device[]> {
     return !avdRunning;
   });
 
-  return [...iosSimulators, ...androidConnected, ...offlineAVDs];
+  // Separate physical and virtual devices
+  const physicalDevices = [...uniquePhysical, ...androidConnected.filter(d => d.isPhysical)];
+  const virtualDevices = [
+    ...iosSimulators,
+    ...androidConnected.filter(d => !d.isPhysical),
+    ...offlineAVDs
+  ];
+
+  // Physical devices first, then virtual
+  return [...physicalDevices, ...virtualDevices];
 }
