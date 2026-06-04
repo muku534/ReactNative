@@ -1,5 +1,7 @@
 import { exec } from 'child_process';
 import * as os from 'os';
+import * as path from 'path';
+import * as fs from 'fs';
 
 export interface Device {
   id: string;
@@ -177,11 +179,41 @@ export async function getAndroidDevices(): Promise<Device[]> {
   });
 }
 
+function getEmulatorCommand(): string {
+  // Check ANDROID_HOME or ANDROID_SDK_ROOT environment variable first
+  const androidHome = process.env.ANDROID_HOME || process.env.ANDROID_SDK_ROOT;
+  if (androidHome) {
+    const defaultEmulatorPath = path.join(androidHome, 'emulator', os.platform() === 'win32' ? 'emulator.exe' : 'emulator');
+    if (fs.existsSync(defaultEmulatorPath)) {
+      return `"${defaultEmulatorPath}"`;
+    }
+  }
+
+  // Check default install locations if environment variables aren't configured
+  const homeDir = os.homedir();
+  let defaultSdkPath = '';
+  if (os.platform() === 'win32') {
+    defaultSdkPath = path.join(process.env.LOCALAPPDATA || path.join(homeDir, 'AppData', 'Local'), 'Android', 'Sdk');
+  } else if (os.platform() === 'darwin') {
+    defaultSdkPath = path.join(homeDir, 'Library', 'Android', 'sdk');
+  } else {
+    defaultSdkPath = path.join(homeDir, 'Android', 'Sdk');
+  }
+
+  const defaultEmulatorPath = path.join(defaultSdkPath, 'emulator', os.platform() === 'win32' ? 'emulator.exe' : 'emulator');
+  if (fs.existsSync(defaultEmulatorPath)) {
+    return `"${defaultEmulatorPath}"`;
+  }
+
+  // Fallback to searching the PATH
+  return 'emulator';
+}
+
 // ── Android: List available AVDs (even when not running) ────
 export async function getAndroidAVDs(): Promise<Device[]> {
   return new Promise((resolve) => {
-    // Try to find emulator binary
-    exec('emulator -list-avds', (err, stdout) => {
+    const emulatorCmd = getEmulatorCommand();
+    exec(`${emulatorCmd} -list-avds`, (err, stdout) => {
       if (err) { return resolve([]); }
 
       const avdNames = stdout
@@ -207,8 +239,9 @@ export async function getAndroidAVDs(): Promise<Device[]> {
 // ── Launch an Android AVD ───────────────────────────────────
 export async function launchAndroidEmulator(avdName: string): Promise<boolean> {
   return new Promise((resolve) => {
+    const emulatorCmd = getEmulatorCommand();
     // Launch emulator in background (detached)
-    const child = exec(`emulator -avd ${avdName} -no-snapshot-load`, {
+    const child = exec(`${emulatorCmd} -avd ${avdName} -no-snapshot-load`, {
       timeout: 0
     });
 

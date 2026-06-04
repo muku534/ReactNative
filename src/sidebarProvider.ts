@@ -38,6 +38,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath || '';
 
       switch (msg.type) {
+        case 'ready':
         case 'refresh':
           await this.refresh();
           break;
@@ -436,11 +437,27 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
   }
 
   async refresh() {
-    this._devices = await getAllDevices();
-    this._view?.webview.postMessage({
-      type: 'devices',
-      data: this._devices
-    });
+    // Instantly send cached devices if we already have them
+    if (this._devices && this._devices.length > 0) {
+      this._view?.webview.postMessage({
+        type: 'devices',
+        data: this._devices
+      });
+    }
+
+    try {
+      // Fetch fresh list of devices in the background
+      const freshDevices = await getAllDevices();
+      this._devices = freshDevices;
+      
+      // Post updated devices to the webview
+      this._view?.webview.postMessage({
+        type: 'devices',
+        data: this._devices
+      });
+    } catch (e) {
+      console.error('Error refreshing devices:', e);
+    }
   }
 
   private _getHtml(): string {

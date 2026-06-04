@@ -474,6 +474,9 @@
       }
     }
   });
+
+  // Notify extension that webview is loaded and ready to receive data
+  vscode.postMessage({ type: 'ready' });
 </script>
 </body>
 </html>

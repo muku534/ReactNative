@@ -162,7 +162,11 @@ You can customize the commands executed by the extension when the Run button is 
 
 ## Release Notes
 
-### v1.3.1 (Latest)
+### v1.3.2 (Latest)
+- 🐛 **Webview Loading Handshake**: Fixed race condition where sidebar view reopened stuck in the loading stage.
+- 🤖 **Android Emulator Path Detection**: Automatically searches for the emulator binary under standard Android SDK paths on Windows, resolving issues where emulators were not listed.
+
+### v1.3.1
 - ⚙️ **Custom Start Commands**: Added support for overriding the start/run commands via VS Code settings (e.g. for projects requiring custom env variables like Rozenite). Supports `${deviceId}` and `${deviceName}` variables.
 
 ### v1.3.0
