@@ -101,36 +101,49 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
           });
           terminal.show();
 
-          const isExpo = isExpoProject(projectPath);
-          vscode.window.showInformationMessage(
-            isExpo ? '📦 Detected Expo project.' : '⚛️ Detected React Native CLI project.'
-          );
+          const config = vscode.workspace.getConfiguration('reactnative');
+          const customIOSCommand = config.get<string>('customStartCommandIOS') || '';
+          const customAndroidCommand = config.get<string>('customStartCommandAndroid') || '';
+          const customCommand = device.platform === 'ios' ? customIOSCommand : customAndroidCommand;
 
-          if (device.platform === 'ios') {
-            if (isExpo) {
-              terminal.sendText(`npx expo start --ios`);
-            } else if (device.isPhysical) {
-              // Physical iOS device — use --device flag with device name
-              terminal.sendText(
-                `npx react-native run-ios --device "${device.name}"`
-              );
-            } else {
-              // Simulator — use --udid
-              terminal.sendText(
-                `npx react-native run-ios --udid ${device.id}`
-              );
-            }
+          if (customCommand) {
+            const formattedCommand = customCommand
+              .replace(/\${deviceId}/g, device.id)
+              .replace(/\${deviceName}/g, device.name);
+            vscode.window.showInformationMessage(`🚀 Running custom command for ${device.name}...`);
+            terminal.sendText(formattedCommand);
           } else {
-            if (isExpo) {
-              terminal.sendText(`npx expo start --android`);
-            } else {
-              // For AVD devices, don't pass deviceId — let RN CLI pick the running emulator
-              if (device.avdName) {
-                terminal.sendText(`npx react-native run-android`);
-              } else {
+            const isExpo = isExpoProject(projectPath);
+            vscode.window.showInformationMessage(
+              isExpo ? '📦 Detected Expo project.' : '⚛️ Detected React Native CLI project.'
+            );
+
+            if (device.platform === 'ios') {
+              if (isExpo) {
+                terminal.sendText(`npx expo start --ios`);
+              } else if (device.isPhysical) {
+                // Physical iOS device — use --device flag with device name
                 terminal.sendText(
-                  `npx react-native run-android --deviceId ${device.id}`
+                  `npx react-native run-ios --device "${device.name}"`
                 );
+              } else {
+                // Simulator — use --udid
+                terminal.sendText(
+                  `npx react-native run-ios --udid ${device.id}`
+                );
+              }
+            } else {
+              if (isExpo) {
+                terminal.sendText(`npx expo start --android`);
+              } else {
+                // For AVD devices, don't pass deviceId — let RN CLI pick the running emulator
+                if (device.avdName) {
+                  terminal.sendText(`npx react-native run-android`);
+                } else {
+                  terminal.sendText(
+                    `npx react-native run-android --deviceId ${device.id}`
+                  );
+                }
               }
             }
           }

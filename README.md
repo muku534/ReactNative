@@ -39,11 +39,12 @@ See the extension in action! Watch how easy it is to boot devices and run your a
 
 ## Key Features
 
-### 🔌 Physical Devices (v1.3)
+### 🔌 Physical Devices & Custom Commands (v1.3)
 - **USB & Wi-Fi Support**: Detect and run your app on real iOS and Android physical devices.
 - **Wireless Connection Wizard**: Connect to Android 11+ via Wi-Fi using QR codes or Pairing Codes.
 - **Direct Desktop Mirroring**: View and interactively control your physical Android device directly from your laptop/desktop.
 - **iOS Developer Pre-checks**: Automatic validation of Apple Developer signing profiles before running.
+- **Custom Start Commands**: Customize the CLI launch command (useful for configurations requiring environment variables like `cross-env` or specific npm run scripts). Supports `${deviceId}` and `${deviceName}` placeholders.
 
 ### 🚀 Expo Support (v1.2)
 - **Full Integration**: Complete support for Expo — from project creation to device boot and app execution.
@@ -119,6 +120,25 @@ Once the simulator is ready, VS Code and the Simulator are automatically arrange
 
 ---
 
+## Configuration Settings
+
+You can customize the commands executed by the extension when the Run button is clicked. Add the following options to your `.vscode/settings.json`:
+
+| Setting | Type | Default | Description |
+|---|---|---|---|
+| `reactnative.customStartCommandAndroid` | `string` | `""` | Custom command for running the app on Android. Supports `${deviceId}` and `${deviceName}` placeholders. |
+| `reactnative.customStartCommandIOS` | `string` | `""` | Custom command for running the app on iOS. Supports `${deviceId}` and `${deviceName}` placeholders. |
+
+### Example Workspace configuration (`.vscode/settings.json`):
+```json
+{
+  "reactnative.customStartCommandAndroid": "cross-env WITH_ROZENITE=true expo start --android",
+  "reactnative.customStartCommandIOS": "cross-env WITH_ROZENITE=true expo start --ios"
+}
+```
+
+---
+
 ## Requirements
 
 - [Node.js](https://nodejs.org/) (Version 16 or later recommended)
@@ -142,7 +162,10 @@ Once the simulator is ready, VS Code and the Simulator are automatically arrange
 
 ## Release Notes
 
-### v1.3.0 (Latest)
+### v1.3.1 (Latest)
+- ⚙️ **Custom Start Commands**: Added support for overriding the start/run commands via VS Code settings (e.g. for projects requiring custom env variables like Rozenite). Supports `${deviceId}` and `${deviceName}` variables.
+
+### v1.3.0
 - 🔌 **Physical Device Support**: Auto-detect physical iPhones and Android devices connected via USB or Wi-Fi.
 - 📡 **Wireless Debugging**: Connect Android devices wirelessly using QR codes or pairing codes without needing a cable.
 - 🪞 **Direct Desktop Mirroring**: Control and mirror your physical Android device directly from your laptop via `scrcpy`.

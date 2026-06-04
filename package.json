@@ -3,7 +3,7 @@
   "displayName": "React Native Companion",
   "description": "Streamline React Native development — project creation, device management, and one-click run from VS Code.",
   "icon": "images/icon.png",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "publisher": "muku534",
   "repository": {
     "type": "git",
@@ -59,6 +59,21 @@
           "name": "Devices"
         }
       ]
+    },
+    "configuration": {
+      "title": "React Native Companion",
+      "properties": {
+        "reactnative.customStartCommandAndroid": {
+          "type": "string",
+          "default": "",
+          "description": "Custom command to run the app on Android devices. Leave empty to use the default command. You can use placeholders like ${deviceId} and ${deviceName}."
+        },
+        "reactnative.customStartCommandIOS": {
+          "type": "string",
+          "default": "",
+          "description": "Custom command to run the app on iOS devices. Leave empty to use the default command. You can use placeholders like ${deviceId} and ${deviceName}."
+        }
+      }
     }
   },
   "scripts": {
