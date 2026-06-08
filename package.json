@@ -3,7 +3,7 @@
   "displayName": "React Native Companion",
   "description": "Streamline React Native development — project creation, device management, and one-click run from VS Code.",
   "icon": "images/icon.png",
-  "version": "1.3.2",
+  "version": "1.3.3",
   "publisher": "muku534",
   "repository": {
     "type": "git",
