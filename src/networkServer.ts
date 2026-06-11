@@ -38,40 +38,51 @@ export class NetworkServer extends EventEmitter {
                 return;
             }
 
-            this.wss = new WebSocket.Server({ port: this.port });
+            const tryPort = (portToTry: number) => {
+                const server = new WebSocket.Server({ port: portToTry });
 
-            this.wss.on('listening', () => {
-                this.emit('listening', this.port);
-                resolve();
-            });
+                server.on('listening', () => {
+                    this.wss = server;
+                    this.port = portToTry;
+                    this.emit('listening', this.port);
+                    resolve();
+                });
 
-            this.wss.on('error', (err: any) => {
-                if (err.code === 'EADDRINUSE') {
-                    console.error(`Port ${this.port} is already in use.`);
-                }
-                this.emit('error', err);
-                reject(err);
-            });
-
-            this.wss.on('connection', (ws) => {
-                this.clients.add(ws);
-                this.emit('clientConnected', this.clients.size);
-
-                ws.on('message', (message) => {
-                    try {
-                        const dataStr = message.toString();
-                        const data = JSON.parse(dataStr);
-                        this.emit('log', data);
-                    } catch (e) {
-                        console.error('Failed to parse incoming network log:', e);
+                server.on('error', (err: any) => {
+                    if (err.code === 'EADDRINUSE') {
+                        if (portToTry < 8399) {
+                            tryPort(portToTry + 1);
+                        } else {
+                            reject(new Error("No available ports found for Network Monitor."));
+                        }
+                    } else {
+                        this.emit('error', err);
+                        reject(err);
                     }
                 });
 
-                ws.on('close', () => {
-                    this.clients.delete(ws);
-                    this.emit('clientDisconnected', this.clients.size);
+                server.on('connection', (ws) => {
+                    this.clients.add(ws);
+                    this.emit('clientConnected', this.clients.size);
+
+                    ws.on('message', (message) => {
+                        try {
+                            const dataStr = message.toString();
+                            const data = JSON.parse(dataStr);
+                            this.emit('log', data);
+                        } catch (e) {
+                            console.error('Failed to parse incoming network log:', e);
+                        }
+                    });
+
+                    ws.on('close', () => {
+                        this.clients.delete(ws);
+                        this.emit('clientDisconnected', this.clients.size);
+                    });
                 });
-            });
+            };
+
+            tryPort(this.port);
         });
     }
 

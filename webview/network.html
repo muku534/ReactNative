@@ -251,7 +251,7 @@
                 
                 <div class="setup-snippet" id="snippetCode">
 if (__DEV__) {
-  const ws = new WebSocket('ws://localhost:8347');
+  const ws = new WebSocket('ws://localhost:<span id="snippetPort">8347</span>');
   
   // 1. Patch Fetch
   const originalFetch = global.fetch;
@@ -471,6 +471,10 @@ if (__DEV__) {
                     if (message.status === 'listening') {
                         statusIndicator.className = 'status-indicator listening';
                         statusText.textContent = `Server listening on port ${message.port}`;
+                        const snippetPortEl = document.getElementById('snippetPort');
+                        if (snippetPortEl) {
+                            snippetPortEl.textContent = message.port;
+                        }
                     }
                     break;
                 case 'clientStatus':
