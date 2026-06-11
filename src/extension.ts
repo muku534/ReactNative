@@ -3,6 +3,7 @@ import * as path from 'path';
 import * as os from 'os';
 import { exec } from 'child_process';
 import { SidebarProvider } from './sidebarProvider';
+import { NetworkPanelManager } from './networkPanelProvider';
 
 export function activate(context: vscode.ExtensionContext) {
 
@@ -127,6 +128,12 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.commands.registerCommand('reactnative.refreshDevices', () => {
             sidebarProvider.refresh();
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('reactnative.openNetworkMonitor', () => {
+            NetworkPanelManager.createOrShow(context.extensionUri);
         })
     );
 }

@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Monitor</title>
+    <style>
+        body {
+            font-family: var(--vscode-font-family);
+            color: var(--vscode-editor-foreground);
+            background-color: var(--vscode-editor-background);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .toolbar {
+            padding: 8px 12px;
+            background: var(--vscode-editorGroupHeader-tabsBackground);
+            border-bottom: 1px solid var(--vscode-panel-border);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 13px;
+            flex-shrink: 0;
+        }
+        .toolbar button {
+            background: var(--vscode-button-secondaryBackground);
+            color: var(--vscode-button-secondaryForeground);
+            border: 1px solid var(--vscode-button-border, transparent);
+            padding: 6px 12px;
+            border-radius: 2px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .toolbar button:hover {
+            background: var(--vscode-button-secondaryHoverBackground);
+        }
+        .toolbar input {
+            background: var(--vscode-input-background);
+            color: var(--vscode-input-foreground);
+            border: 1px solid var(--vscode-input-border);
+            padding: 6px 8px;
+            border-radius: 2px;
+            flex-grow: 1;
+            max-width: 300px;
+            font-size: 13px;
+        }
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+        }
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--vscode-errorForeground); /* default disconnected */
+        }
+        .status-indicator.listening {
+            background: var(--vscode-testing-iconPassed);
+        }
+        .status-indicator.connected {
+            background: var(--vscode-testing-iconPassed);
+            box-shadow: 0 0 5px var(--vscode-testing-iconPassed);
+        }
+        .split-view {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+        .table-container {
+            flex: 1;
+            overflow-y: auto;
+            border-right: 1px solid var(--vscode-panel-border);
+            min-width: 300px;
+            background: var(--vscode-editor-background);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            table-layout: fixed;
+        }
+        th, td {
+            text-align: left;
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--vscode-panel-border);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        th {
+            position: sticky;
+            top: 0;
+            background: var(--vscode-editorGroupHeader-tabsBackground);
+            font-weight: 600;
+            z-index: 10;
+        }
+        tr {
+            cursor: pointer;
+        }
+        tr:hover {
+            background: var(--vscode-list-hoverBackground);
+        }
+        tr.selected {
+            background: var(--vscode-list-activeSelectionBackground);
+            color: var(--vscode-list-activeSelectionForeground);
+        }
+        
+        .method-badge {
+            font-weight: bold;
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 3px;
+            background: rgba(128, 128, 128, 0.1);
+        }
+        .method-GET { color: var(--vscode-symbolIcon-functionForeground); }
+        .method-POST { color: var(--vscode-symbolIcon-stringForeground); }
+        .method-PUT { color: var(--vscode-symbolIcon-keywordForeground); }
+        .method-DELETE { color: var(--vscode-errorForeground); }
+        
+        .status-success { color: var(--vscode-testing-iconPassed); }
+        .status-error { color: var(--vscode-errorForeground); }
+        .status-pending { color: var(--vscode-descriptionForeground); font-style: italic; }
+
+        .details-container {
+            width: 450px;
+            display: flex;
+            flex-direction: column;
+            background: var(--vscode-editor-background);
+        }
+        .details-header {
+            display: flex;
+            border-bottom: 1px solid var(--vscode-panel-border);
+            background: var(--vscode-editorGroupHeader-tabsBackground);
+        }
+        .tab {
+            padding: 10px 16px;
+            cursor: pointer;
+            font-size: 13px;
+            opacity: 0.7;
+            border-bottom: 2px solid transparent;
+        }
+        .tab:hover {
+            opacity: 1;
+        }
+        .tab.active {
+            opacity: 1;
+            border-bottom-color: var(--vscode-panelTitle-activeBorder);
+            color: var(--vscode-panelTitle-activeForeground);
+        }
+        .details-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            font-size: 13px;
+            font-family: var(--vscode-editor-font-family);
+        }
+        .details-section {
+            display: none;
+        }
+        .details-section.active {
+            display: block;
+        }
+        .key-value {
+            display: flex;
+            margin-bottom: 6px;
+            word-break: break-all;
+        }
+        .key {
+            font-weight: 600;
+            width: 140px;
+            flex-shrink: 0;
+            color: var(--vscode-symbolIcon-propertyForeground);
+        }
+        .value {
+            flex: 1;
+        }
+        pre {
+            margin: 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            color: var(--vscode-editor-foreground);
+            background: var(--vscode-textCodeBlock-background);
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--vscode-descriptionForeground);
+            font-size: 14px;
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .setup-snippet {
+            user-select: all;
+            background: var(--vscode-textCodeBlock-background);
+            border: 1px solid var(--vscode-panel-border);
+            padding: 15px;
+            border-radius: 4px;
+            font-family: var(--vscode-editor-font-family);
+            font-size: 12px;
+            color: var(--vscode-editor-foreground);
+            white-space: pre;
+            overflow-x: auto;
+            margin: 15px 0;
+            text-align: left;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="toolbar">
+        <div class="status-badge">
+            <div id="statusIndicator" class="status-indicator"></div>
+            <span id="statusText">Starting server...</span>
+        </div>
+        <button id="btnClear">Clear Logs</button>
+        <input type="text" id="searchInput" placeholder="Filter by URL...">
+    </div>
+
+    <div class="split-view">
+        <div class="table-container">
+            <table id="networkTable" style="display: none;">
+                <thead>
+                    <tr>
+                        <th style="width: 80px;">Method</th>
+                        <th style="width: 70px;">Status</th>
+                        <th>URL</th>
+                        <th style="width: 80px;">Time</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <!-- Rows will be added here -->
+                </tbody>
+            </table>
+            <div id="emptyTableState" class="empty-state">
+                <div style="font-size: 32px; margin-bottom: 10px;">📡</div>
+                <h2 style="margin: 0 0 10px; color: var(--vscode-foreground);">Network Monitor</h2>
+                <p style="margin: 0 0 20px; max-width: 500px;">To intercept network requests, add this snippet to your React Native app's entry file (e.g., <code>App.js</code> or <code>index.js</code>). The app will send logs to this VS Code tab in real-time.</p>
+                
+                <div class="setup-snippet" id="snippetCode">
+if (__DEV__) {
+  const ws = new WebSocket('ws://localhost:8347');
+  
+  // 1. Patch Fetch
+  const originalFetch = global.fetch;
+  global.fetch = async function(...args) {
+    const id = Math.random().toString(36).substring(7);
+    const reqData = {
+      id,
+      request: {
+        method: args[1]?.method || 'GET',
+        url: args[0],
+        headers: args[1]?.headers || {},
+        postData: args[1]?.body,
+        startTime: Date.now()
+      },
+      status: 'pending'
+    };
+    if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(reqData));
+    
+    try {
+      const response = await originalFetch.apply(this, args);
+      const clonedRes = response.clone();
+      const resText = await clonedRes.text();
+      
+      const resData = {
+        id,
+        response: {
+          status: response.status,
+          headers: Object.fromEntries(response.headers.entries()),
+          endTime: Date.now(),
+          duration: Date.now() - reqData.request.startTime
+        },
+        responseBody: resText,
+        status: response.ok ? 'success' : 'error'
+      };
+      if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(resData));
+      return response;
+    } catch (error) {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({
+           id,
+           response: { status: 0, endTime: Date.now(), duration: Date.now() - reqData.request.startTime, headers: {} },
+           responseBody: error.toString(),
+           status: 'error'
+        }));
+      }
+      throw error;
+    }
+  };
+
+  // 2. Patch XMLHttpRequest (Axios)
+  const originalXHR = global.XMLHttpRequest;
+  global.XMLHttpRequest = function() {
+    const xhr = new originalXHR();
+    const id = Math.random().toString(36).substring(7);
+    let startTime;
+    let method = 'GET';
+    let url = '';
+    let reqHeaders = {};
+    
+    const originalOpen = xhr.open;
+    xhr.open = function(m, u, ...rest) {
+      method = m;
+      url = u;
+      return originalOpen.apply(this, [m, u, ...rest]);
+    };
+
+    const originalSetRequestHeader = xhr.setRequestHeader;
+    xhr.setRequestHeader = function(header, value) {
+      reqHeaders[header] = value;
+      return originalSetRequestHeader.apply(this, [header, value]);
+    };
+
+    const originalSend = xhr.send;
+    xhr.send = function(body) {
+      startTime = Date.now();
+      const reqData = {
+        id,
+        request: { method, url, headers: reqHeaders, postData: body, startTime },
+        status: 'pending'
+      };
+      if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(reqData));
+      
+      this.addEventListener('load', function() {
+        let responseBody = '';
+        try {
+          if (!xhr.responseType || xhr.responseType === 'text') {
+            responseBody = xhr.responseText;
+          } else {
+            responseBody = `[${xhr.responseType}]`;
+          }
+        } catch(e) {
+          responseBody = '[Unable to read]';
+        }
+
+        const resData = {
+          id,
+          response: {
+            status: xhr.status,
+            headers: {},
+            endTime: Date.now(),
+            duration: Date.now() - startTime
+          },
+          responseBody: responseBody,
+          status: xhr.status >= 200 && xhr.status < 300 ? 'success' : 'error'
+        };
+        
+        try {
+          const headersStr = xhr.getAllResponseHeaders();
+          if (headersStr) {
+            headersStr.trim().split(/[\\r\\n]+/).forEach(line => {
+              const parts = line.split(': ');
+              if (parts.length === 2) resData.response.headers[parts[0]] = parts[1];
+            });
+          }
+        } catch(e) {}
+        
+        if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(resData));
+      });
+      
+      this.addEventListener('error', function() {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({
+            id,
+            response: { status: 0, endTime: Date.now(), duration: Date.now() - startTime, headers: {} },
+            responseBody: 'Network Error',
+            status: 'error'
+          }));
+        }
+      });
+      
+      return originalSend.apply(this, [body]);
+    };
+    
+    return xhr;
+  };
+}
+                </div>
+                <button id="btnCopySnippet" style="background: var(--vscode-button-background); color: var(--vscode-button-foreground); border: none; padding: 8px 16px; border-radius: 2px; cursor: pointer;">Copy Snippet</button>
+            </div>
+        </div>
+
+        <div id="detailsContainer" class="details-container">
+            <div class="details-header">
+                <div class="tab active" data-tab="headers">Headers</div>
+                <div class="tab" data-tab="payload">Payload</div>
+                <div class="tab" data-tab="response">Response</div>
+            </div>
+            <div class="details-content">
+                <div id="tab-headers" class="details-section active">
+                    <div class="empty-state">Select a request to view headers</div>
+                </div>
+                <div id="tab-payload" class="details-section"></div>
+                <div id="tab-response" class="details-section"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const vscode = acquireVsCodeApi();
+        let requestsMap = new Map();
+        let selectedRequestId = null;
+
+        const statusIndicator = document.getElementById('statusIndicator');
+        const statusText = document.getElementById('statusText');
+        const networkTable = document.getElementById('networkTable');
+        const tableBody = document.getElementById('tableBody');
+        const emptyTableState = document.getElementById('emptyTableState');
+        const detailsContainer = document.getElementById('detailsContainer');
+        const searchInput = document.getElementById('searchInput');
+
+        document.getElementById('btnCopySnippet').addEventListener('click', (e) => {
+             const snippet = document.getElementById('snippetCode').innerText;
+             navigator.clipboard.writeText(snippet);
+             e.target.innerText = 'Copied!';
+             setTimeout(() => e.target.innerText = 'Copy Snippet', 2000);
+        });
+
+        document.getElementById('btnClear').addEventListener('click', () => {
+            requestsMap.clear();
+            tableBody.innerHTML = '';
+            networkTable.style.display = 'none';
+            emptyTableState.style.display = 'flex';
+            
+            document.getElementById('tab-headers').innerHTML = '<div class="empty-state">Select a request to view headers</div>';
+            document.getElementById('tab-payload').innerHTML = '';
+            document.getElementById('tab-response').innerHTML = '';
+            
+            selectedRequestId = null;
+            vscode.postMessage({ type: 'clearLogs' });
+        });
+
+        // Tabs
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.details-section').forEach(s => s.classList.remove('active'));
+                
+                e.target.classList.add('active');
+                document.getElementById(`tab-${e.target.dataset.tab}`).classList.add('active');
+            });
+        });
+
+        // Search filter
+        searchInput.addEventListener('input', (e) => {
+            const filter = e.target.value.toLowerCase();
+            document.querySelectorAll('#tableBody tr').forEach(row => {
+                const url = row.querySelector('.url-cell').textContent.toLowerCase();
+                row.style.display = url.includes(filter) ? '' : 'none';
+            });
+        });
+
+        // Handle messages from extension
+        window.addEventListener('message', event => {
+            const message = event.data;
+            switch (message.type) {
+                case 'serverStatus':
+                    if (message.status === 'listening') {
+                        statusIndicator.className = 'status-indicator listening';
+                        statusText.textContent = `Server listening on port ${message.port}`;
+                    }
+                    break;
+                case 'clientStatus':
+                    if (message.count > 0) {
+                         statusIndicator.className = 'status-indicator connected';
+                         statusText.textContent = `${message.count} App(s) Connected`;
+                    } else {
+                         statusIndicator.className = 'status-indicator listening';
+                         statusText.textContent = `Server listening (0 apps connected)`;
+                    }
+                    break;
+                case 'newLog':
+                    handleNewRequest(message.data);
+                    break;
+                case 'updateLog':
+                    handleUpdateResponse(message.data);
+                    break;
+            }
+        });
+
+        function handleNewRequest(data) {
+            requestsMap.set(data.id, data);
+            
+            emptyTableState.style.display = 'none';
+            networkTable.style.display = 'table';
+
+            const tr = document.createElement('tr');
+            tr.id = `req-${data.id}`;
+            tr.onclick = () => selectRequest(data.id);
+
+            const methodClass = `method-${data.request.method}`;
+            
+            let displayUrl = data.request.url;
+            try {
+                 const urlObj = new URL(displayUrl);
+                 displayUrl = urlObj.pathname + urlObj.search;
+            } catch(e) {}
+
+            tr.innerHTML = `
+                <td><span class="method-badge ${methodClass}">${data.request.method}</span></td>
+                <td class="status-cell"><span class="status-pending">Pending</span></td>
+                <td class="url-cell" title="${data.request.url}">${displayUrl}</td>
+                <td class="time-cell">-</td>
+            `;
+
+            tableBody.appendChild(tr);
+            tr.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function handleUpdateResponse(data) {
+            requestsMap.set(data.id, data);
+            const tr = document.getElementById(`req-${data.id}`);
+            if (!tr) {
+                 handleNewRequest(data); // In case we missed the start
+                 return;
+            }
+
+            const statusCell = tr.querySelector('.status-cell');
+            const timeCell = tr.querySelector('.time-cell');
+
+            if (data.response) {
+                const statusClass = data.response.status >= 400 ? 'status-error' : 'status-success';
+                statusCell.innerHTML = `<span class="${statusClass}">${data.response.status}</span>`;
+                
+                if (data.response.duration) {
+                    timeCell.textContent = `${Math.round(data.response.duration)}ms`;
+                }
+            }
+
+            if (selectedRequestId === data.id) {
+                renderDetails(data);
+            }
+        }
+
+        function selectRequest(id) {
+            selectedRequestId = id;
+            document.querySelectorAll('#tableBody tr').forEach(tr => tr.classList.remove('selected'));
+            const selectedTr = document.getElementById(`req-${id}`);
+            if (selectedTr) {
+                selectedTr.classList.add('selected');
+            }
+            
+            const data = requestsMap.get(id);
+            if (data) {
+                renderDetails(data);
+            }
+        }
+
+        function renderDetails(data) {
+            // Headers Tab
+            let headersHtml = `<h3 style="margin-top:0">General</h3>
+                <div class="key-value"><div class="key">Request URL:</div><div class="value">${data.request.url}</div></div>
+                <div class="key-value"><div class="key">Request Method:</div><div class="value">${data.request.method}</div></div>
+                <div class="key-value"><div class="key">Status Code:</div><div class="value">${data.response ? data.response.status : 'Pending'}</div></div>
+            `;
+
+            if (data.response && data.response.headers && Object.keys(data.response.headers).length > 0) {
+                headersHtml += `<h3>Response Headers</h3>`;
+                for (const [k, v] of Object.entries(data.response.headers)) {
+                    headersHtml += `<div class="key-value"><div class="key">${k}:</div><div class="value">${v}</div></div>`;
+                }
+            }
+
+            if (data.request && data.request.headers && Object.keys(data.request.headers).length > 0) {
+                headersHtml += `<h3>Request Headers</h3>`;
+                for (const [k, v] of Object.entries(data.request.headers)) {
+                    headersHtml += `<div class="key-value"><div class="key">${k}:</div><div class="value">${v}</div></div>`;
+                }
+            }
+            document.getElementById('tab-headers').innerHTML = headersHtml;
+
+            // Payload Tab
+            let payloadHtml = `<div class="empty-state">No payload data</div>`;
+            if (data.request && data.request.postData) {
+                try {
+                    const parsed = JSON.parse(data.request.postData);
+                    payloadHtml = `<pre>${JSON.stringify(parsed, null, 2)}</pre>`;
+                } catch(e) {
+                    payloadHtml = `<pre>${data.request.postData}</pre>`;
+                }
+            }
+            document.getElementById('tab-payload').innerHTML = payloadHtml;
+
+            // Response Tab
+            let responseHtml = `<div class="empty-state">Waiting for response...</div>`;
+            if (data.responseBody !== undefined) {
+                 if (!data.responseBody) {
+                      responseHtml = `<div class="empty-state">No response body</div>`;
+                 } else {
+                     let displayBody = data.responseBody;
+                     try {
+                          const parsed = JSON.parse(displayBody);
+                          displayBody = JSON.stringify(parsed, null, 2);
+                     } catch(e) {}
+                     responseHtml = `<pre>${displayBody}</pre>`;
+                 }
+            }
+            document.getElementById('tab-response').innerHTML = responseHtml;
+        }
+    </script>
+</body>
+</html>

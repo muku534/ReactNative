@@ -341,6 +341,10 @@
     vscode.postMessage({ type: 'metro' });
   }
 
+  function openNetworkMonitor() {
+    vscode.postMessage({ type: 'openNetworkMonitor' });
+  }
+
   function selectDevice(id) {
     selectedId = id;
     document.querySelectorAll('.device-card').forEach(el => {

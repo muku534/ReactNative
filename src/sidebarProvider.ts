@@ -212,6 +212,11 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
           break;
         }
 
+        case 'openNetworkMonitor': {
+          vscode.commands.executeCommand('reactnative.openNetworkMonitor');
+          break;
+        }
+
         // ── WiFi Device Connection ──────────────────────
         case 'connectWifi': {
           const method = await vscode.window.showQuickPick(

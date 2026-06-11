@@ -3,7 +3,7 @@
   "displayName": "React Native Companion",
   "description": "Streamline React Native development — project creation, device management, and one-click run from VS Code.",
   "icon": "images/icon.png",
-  "version": "1.3.3",
+  "version": "1.3.4",
   "publisher": "muku534",
   "repository": {
     "type": "git",
@@ -40,6 +40,11 @@
         "command": "reactnative.refreshDevices",
         "title": "Refresh Devices",
         "category": "ReactNative"
+      },
+      {
+        "command": "reactnative.openNetworkMonitor",
+        "title": "React Native: Open Network Monitor",
+        "category": "ReactNative"
       }
     ],
     "viewsContainers": {
@@ -72,6 +77,11 @@
           "type": "string",
           "default": "",
           "description": "Custom command to run the app on iOS devices. Leave empty to use the default command. You can use placeholders like ${deviceId} and ${deviceName}."
+        },
+        "reactnative.networkMonitorPort": {
+          "type": "number",
+          "default": 8347,
+          "description": "Port used by the React Native Network Monitor WebSocket server."
         }
       }
     }
@@ -85,16 +95,20 @@
     "test": "node ./out/test/runTest.js"
   },
   "devDependencies": {
-    "@types/vscode": "^1.75.0",
     "@types/glob": "^8.1.0",
     "@types/mocha": "^10.0.1",
     "@types/node": "16.x",
+    "@types/vscode": "^1.75.0",
+    "@types/ws": "^8.18.1",
     "@typescript-eslint/eslint-plugin": "^5.59.1",
     "@typescript-eslint/parser": "^5.59.1",
+    "@vscode/test-electron": "^2.3.0",
     "eslint": "^8.39.0",
     "glob": "^8.1.0",
     "mocha": "^10.2.0",
-    "typescript": "^5.0.4",
-    "@vscode/test-electron": "^2.3.0"
+    "typescript": "^5.0.4"
+  },
+  "dependencies": {
+    "ws": "^8.21.0"
   }
 }

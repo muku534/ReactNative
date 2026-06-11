@@ -6,6 +6,10 @@ The ultimate workspace companion for React Native CLI and Expo developers. Creat
 
 ---
 
+## ✨ What's New in v1.3.4 — Network Monitor (In-Editor DevTools)
+
+Say goodbye to external network debuggers! The new Network Monitor lets you track all network requests (Fetch and Axios) directly inside a dedicated VS Code tab. Just type `Cmd+Shift+P` -> `React Native: Open Network Monitor` to inspect URLs, methods, headers, payloads, and responses natively!
+
 ## ✨ What's New in v1.3.0 — Real Physical Devices & Wireless Debugging
 
 Connect your physical devices (iOS & Android) to VS Code via USB or Wi-Fi, run apps directly, and even control them from your desktop/laptop!
@@ -38,6 +42,12 @@ See the extension in action! Watch how easy it is to boot devices and run your a
 ---
 
 ## Key Features
+
+### 📡 Network Monitor (v1.3.4)
+- **In-Editor Network Tab**: Inspect network calls natively inside VS Code (`Cmd+Shift+P` -> `React Native: Open Network Monitor`).
+- **Fetch & Axios Support**: Automatically intercepts both `fetch` and `XMLHttpRequest` calls inside your React Native app.
+- **Deep Inspection**: View Method, Status, Duration, Request Headers, Request Body, and Response Body cleanly split into resizable panes.
+- **Easy Setup**: Provides an easy copy-paste snippet to drop into your `App.js` with zero dependencies.
 
 ### 🔌 Physical Devices & Custom Commands (v1.3)
 - **USB & Wi-Fi Support**: Detect and run your app on real iOS and Android physical devices.
@@ -162,7 +172,14 @@ You can customize the commands executed by the extension when the Run button is 
 
 ## Release Notes
 
-### v1.3.2 (Latest)
+### v1.3.4 (Latest)
+- 📡 **Network Monitor**: Added a native Network Monitor tab inside VS Code. Intercept and debug `fetch` and `Axios` network calls directly from your editor. Accessible via Command Palette (`React Native: Open Network Monitor`).
+- 🐛 **Blob Response Fixes**: Bulletproofed network interceptors to handle binary data without crashing.
+
+### v1.3.3
+- 🐛 **macOS Window Arrangement**: Resolved macOS auto-arrange window failures that occurred when running inside a Development Host or using alternative IDE versions (e.g., Cursor).
+
+### v1.3.2
 - 🐛 **Webview Loading Handshake**: Fixed race condition where sidebar view reopened stuck in the loading stage.
 - 🤖 **Android Emulator Path Detection**: Automatically searches for the emulator binary under standard Android SDK paths on Windows, resolving issues where emulators were not listed.
 
