@@ -172,7 +172,10 @@ You can customize the commands executed by the extension when the Run button is 
 
 ## Release Notes
 
-### v1.3.4 (Latest)
+### v1.3.5 (Latest)
+- 🐛 **Missing Module Fix**: Fixed a critical bug where the `ws` (WebSocket) module was not bundled in the extension, causing activation failures for the Network Monitor.
+
+### v1.3.4
 - 📡 **Network Monitor**: Added a native Network Monitor tab inside VS Code. Intercept and debug `fetch` and `Axios` network calls directly from your editor. Accessible via Command Palette (`React Native: Open Network Monitor`).
 - 🐛 **Blob Response Fixes**: Bulletproofed network interceptors to handle binary data without crashing.
 
