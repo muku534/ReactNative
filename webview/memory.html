@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Monitor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: var(--vscode-font-family);
+            color: var(--vscode-foreground);
+            background: var(--vscode-editor-background);
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ── Toolbar ── */
+        .toolbar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 16px;
+            border-bottom: 1px solid var(--vscode-panel-border);
+            background: var(--vscode-editor-background);
+            flex-shrink: 0;
+        }
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+        }
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--vscode-charts-yellow);
+        }
+        .status-indicator.listening {
+            background: var(--vscode-charts-yellow);
+        }
+        .status-indicator.connected {
+            background: var(--vscode-charts-green);
+            box-shadow: 0 0 6px var(--vscode-charts-green);
+        }
+        .toolbar button {
+            background: var(--vscode-button-secondaryBackground);
+            color: var(--vscode-button-secondaryForeground);
+            border: none;
+            padding: 4px 10px;
+            border-radius: 2px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .toolbar button:hover {
+            background: var(--vscode-button-secondaryHoverBackground);
+        }
+        .toolbar button.primary-btn {
+            background: var(--vscode-button-background);
+            color: var(--vscode-button-foreground);
+        }
+        .toolbar button.primary-btn:hover {
+            background: var(--vscode-button-hoverBackground);
+        }
+        .toolbar-spacer {
+            flex: 1;
+        }
+
+        /* ── Main Content ── */
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+        }
+
+        /* ── Dashboard Cards ── */
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .card {
+            background: var(--vscode-editorWidget-background);
+            border: 1px solid var(--vscode-panel-border);
+            border-radius: 6px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .card-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--vscode-descriptionForeground);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .card-value {
+            font-size: 24px;
+            font-weight: 700;
+            line-height: 1;
+        }
+        .card-sub {
+            font-size: 12px;
+            color: var(--vscode-descriptionForeground);
+        }
+
+        /* ── Gauge ── */
+        .gauge-container {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .gauge-svg {
+            width: 60px;
+            height: 60px;
+            flex-shrink: 0;
+        }
+        .gauge-bg {
+            fill: none;
+            stroke: var(--vscode-panel-border);
+            stroke-width: 6;
+        }
+        .gauge-fill {
+            fill: none;
+            stroke: var(--vscode-charts-blue);
+            stroke-width: 6;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 0.6s ease, stroke 0.3s ease;
+        }
+        .gauge-fill.warning {
+            stroke: var(--vscode-charts-yellow);
+        }
+        .gauge-fill.danger {
+            stroke: var(--vscode-charts-red);
+        }
+        .gauge-text {
+            fill: var(--vscode-foreground);
+            font-size: 11px;
+            font-weight: 700;
+            text-anchor: middle;
+            dominant-baseline: central;
+        }
+
+        /* ── Trend Arrow ── */
+        .trend-up { color: var(--vscode-charts-red); }
+        .trend-stable { color: var(--vscode-charts-green); }
+        .trend-down { color: var(--vscode-charts-blue); }
+
+        /* ── Leak Tester ── */
+        .tester-section {
+            background: var(--vscode-editorWidget-background);
+            border: 1px solid var(--vscode-panel-border);
+            border-radius: 6px;
+            padding: 16px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .tester-info {
+            flex: 1;
+        }
+        .tester-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .tester-desc {
+            font-size: 12px;
+            color: var(--vscode-descriptionForeground);
+        }
+        .tester-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .tester-result {
+            font-size: 13px;
+            font-weight: 600;
+            padding: 8px 12px;
+            border-radius: 4px;
+            display: none;
+        }
+        .tester-result.pass {
+            display: block;
+            background: rgba(0, 200, 83, 0.15);
+            color: var(--vscode-charts-green);
+        }
+        .tester-result.warning {
+            display: block;
+            background: rgba(244, 67, 54, 0.15);
+            color: var(--vscode-charts-red);
+        }
+        .tester-result.info {
+            display: block;
+            background: rgba(79, 195, 247, 0.15);
+            color: var(--vscode-charts-blue);
+        }
+        .btn-test {
+            background: var(--vscode-button-background);
+            color: var(--vscode-button-foreground);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+        }
+        .btn-test:hover {
+            background: var(--vscode-button-hoverBackground);
+        }
+        .btn-test.testing {
+            background: var(--vscode-charts-red);
+            color: white;
+            animation: pulse 2s infinite;
+        }
+        .btn-test:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
+        /* ── Warning Banner ── */
+        .warning-banner {
+            display: none;
+            background: rgba(244, 67, 54, 0.1);
+            border: 1px solid rgba(244, 67, 54, 0.3);
+            border-radius: 6px;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        .warning-banner.visible {
+            display: block;
+        }
+        .warning-banner strong {
+            color: var(--vscode-charts-red);
+        }
+
+        /* ── Chart ── */
+        .chart-container {
+            background: var(--vscode-editorWidget-background);
+            border: 1px solid var(--vscode-panel-border);
+            border-radius: 6px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .chart-title {
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .chart-legend {
+            display: flex;
+            gap: 16px;
+            font-size: 11px;
+            color: var(--vscode-descriptionForeground);
+        }
+        .legend-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 4px;
+            vertical-align: middle;
+        }
+        canvas {
+            width: 100%;
+            height: 200px;
+            display: block;
+        }
+
+        /* ── Empty State ── */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 400px;
+            color: var(--vscode-descriptionForeground);
+            font-size: 14px;
+            text-align: center;
+            padding: 40px;
+        }
+        .setup-snippet {
+            user-select: all;
+            background: var(--vscode-textCodeBlock-background);
+            border: 1px solid var(--vscode-panel-border);
+            padding: 15px;
+            border-radius: 4px;
+            font-family: var(--vscode-editor-font-family);
+            font-size: 12px;
+            color: var(--vscode-editor-foreground);
+            white-space: pre;
+            overflow-x: auto;
+            margin: 15px 0;
+            text-align: left;
+            width: 100%;
+        }
+
+        /* ── Live View (shown when connected) ── */
+        .live-view {
+            display: none;
+        }
+        .live-view.active {
+            display: block;
+        }
+
+        /* ── GC Timeline ── */
+        .gc-section {
+            background: var(--vscode-editorWidget-background);
+            border: 1px solid var(--vscode-panel-border);
+            border-radius: 6px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        .gc-section-title {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        .gc-event {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 0;
+            border-bottom: 1px solid var(--vscode-panel-border);
+            font-size: 12px;
+        }
+        .gc-event:last-child {
+            border-bottom: none;
+        }
+        .gc-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--vscode-charts-purple);
+            flex-shrink: 0;
+        }
+        .gc-time {
+            color: var(--vscode-descriptionForeground);
+            min-width: 70px;
+        }
+        .gc-freed {
+            color: var(--vscode-charts-green);
+            font-weight: 600;
+        }
+
+        @media (max-width: 700px) {
+            .dashboard {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            .tester-section {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+            .tester-actions {
+                width: 100%;
+                justify-content: space-between;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="toolbar">
+        <div class="status-badge">
+            <div id="statusIndicator" class="status-indicator"></div>
+            <span id="statusText">Starting server...</span>
+        </div>
+        <div class="toolbar-spacer"></div>
+        <button id="btnForceGC" class="primary-btn" title="Request garbage collection">🗑️ Force GC</button>
+        <button id="btnClear" title="Clear all snapshots">Clear</button>
+    </div>
+
+    <div class="main-content">
+
+        <!-- Empty State (shown when no app is connected) -->
+        <div id="emptyState" class="empty-state">
+            <div style="font-size: 32px; margin-bottom: 10px;">🧠</div>
+            <h2 style="margin: 0 0 10px; color: var(--vscode-foreground);">Memory Monitor</h2>
+            <p style="margin: 0 0 20px; max-width: 500px;">Track your React Native app's memory usage in real-time. Add this snippet to your app's entry file (e.g., <code>App.js</code> or <code>index.js</code>).</p>
+
+            <div class="setup-snippet" id="snippetCode">if (__DEV__) {
+  const memWs = new WebSocket('ws://localhost:<span id="snippetPort">8348</span>');
+
+  // Listen for Force GC requests from VS Code
+  memWs.onmessage = (e) => {
+    try {
+      const msg = JSON.parse(e.data);
+      if (msg.type === 'forceGC' && global.gc) global.gc();
+    } catch(err) {}
+  };
+
+  setInterval(() => {
+    if (memWs.readyState === WebSocket.OPEN && global.HermesInternal) {
+      const stats = global.HermesInternal.getInstrumentedStats();
+      memWs.send(JSON.stringify({
+        type: 'memory',
+        timestamp: Date.now(),
+        heapUsed: stats.js_heapSize || 0,
+        heapTotal: stats.js_totalHeapSize || stats.js_heapSize || 0,
+        gcCount: stats.js_numGCs || 0,
+        gcTime: stats.js_gcTime || 0,
+        mallocSize: stats.js_mallocSize || 0,
+        objectCount: stats.js_numLiveObjects || 0,
+        externalBytes: stats.js_externalBytes || 0
+      }));
+    }
+  }, 1000);
+}</div>
+            <button id="btnCopySnippet" style="background: var(--vscode-button-background); color: var(--vscode-button-foreground); border: none; padding: 8px 16px; border-radius: 2px; cursor: pointer;">Copy Snippet</button>
+        </div>
+
+        <!-- Live View (shown when app sends data) -->
+        <div id="liveView" class="live-view">
+
+            <!-- Warning Banner -->
+            <div id="warningBanner" class="warning-banner">
+                <strong>⚠️ Potential Memory Leak Detected</strong><br>
+                Your app's memory usage is steadily increasing even after garbage collection. This could indicate a memory leak. Check for unsubscribed event listeners, timers not cleared in <code>useEffect</code> cleanup, or large data being cached indefinitely.
+            </div>
+
+            <!-- Dashboard Cards (3 columns) -->
+            <div class="dashboard" style="grid-template-columns: repeat(3, 1fr);">
+                <div class="card">
+                    <div class="card-label">🧠 Heap Used</div>
+                    <div class="gauge-container">
+                        <svg class="gauge-svg" viewBox="0 0 36 36">
+                            <path class="gauge-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                            <path id="gaugeArc" class="gauge-fill" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" stroke-dasharray="0, 100"/>
+                            <text id="gaugePercent" class="gauge-text" x="18" y="18">0%</text>
+                        </svg>
+                        <div>
+                            <div id="heapValue" class="card-value">--</div>
+                            <div id="heapSub" class="card-sub">peak: -- MB</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-label">📈 Trend</div>
+                    <div id="trendValue" class="card-value trend-stable" style="font-size: 18px;">→ Stable</div>
+                    <div id="trendSub" class="card-sub">Heap is holding steady</div>
+                </div>
+
+                <div class="card">
+                    <div class="card-label">🗑️ GC Activity</div>
+                    <div id="gcValue" class="card-value" style="font-size: 18px;">0</div>
+                    <div id="gcSub" class="card-sub">collections</div>
+                </div>
+
+            </div>
+
+            <!-- Leak Tester -->
+            <div class="tester-section">
+                <div class="tester-info">
+                    <div class="tester-title">🧪 Screen Leak Tester</div>
+                    <div class="tester-desc">Find out if a specific screen is leaking memory. Click "Start Test", open a screen in your app, go back, then click "End Test".</div>
+                </div>
+                <div class="tester-actions">
+                    <div id="testerResult" class="tester-result"></div>
+                    <button id="btnToggleTest" class="btn-test">▶ Start Test</button>
+                </div>
+            </div>
+
+            <!-- Real-Time Chart -->
+            <div class="chart-container">
+                <div class="chart-header">
+                    <div class="chart-title">Heap Usage Over Time</div>
+                    <div class="chart-legend">
+                        <span><span class="legend-dot" style="background: #4fc3f7;"></span>Heap Used</span>
+                        <span><span class="legend-dot" style="background: rgba(255,255,255,0.15);"></span>Heap Total</span>
+                        <span><span class="legend-dot" style="background: #ab47bc;"></span>GC Event</span>
+                    </div>
+                </div>
+                <canvas id="memoryChart" height="200"></canvas>
+            </div>
+
+            <!-- GC Timeline -->
+            <div class="gc-section">
+                <div class="gc-section-title">🗑️ Recent GC Events</div>
+                <div id="gcTimeline">
+                    <div style="color: var(--vscode-descriptionForeground); font-size: 12px; padding: 8px 0;">Waiting for GC events...</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const vscode = acquireVsCodeApi();
+
+        // State
+        const snapshots = [];
+        const gcEvents = [];
+        let lastGCCount = 0;
+        
+        // Tester State
+        let isTesting = false;
+        let testStartTime = null;
+        let testEndTime = null;
+        let testBaselineMB = 0;
+        let pendingTestResult = false;
+
+        // DOM
+        const statusIndicator = document.getElementById('statusIndicator');
+        const statusText = document.getElementById('statusText');
+        const emptyState = document.getElementById('emptyState');
+        const liveView = document.getElementById('liveView');
+        const warningBanner = document.getElementById('warningBanner');
+
+        // Gauge
+        const gaugeArc = document.getElementById('gaugeArc');
+        const gaugePercent = document.getElementById('gaugePercent');
+
+        // Cards
+        const heapValue = document.getElementById('heapValue');
+        const heapSub = document.getElementById('heapSub');
+        const trendValue = document.getElementById('trendValue');
+        const trendSub = document.getElementById('trendSub');
+        const gcValue = document.getElementById('gcValue');
+        const gcSub = document.getElementById('gcSub');
+
+        // Tester DOM
+        const btnToggleTest = document.getElementById('btnToggleTest');
+        const testerResult = document.getElementById('testerResult');
+
+        // Chart
+        const canvas = document.getElementById('memoryChart');
+        const ctx = canvas.getContext('2d');
+
+        // ── Buttons ──
+        document.getElementById('btnCopySnippet').addEventListener('click', (e) => {
+            const snippet = document.getElementById('snippetCode').innerText;
+            navigator.clipboard.writeText(snippet);
+            e.target.innerText = 'Copied!';
+            setTimeout(() => e.target.innerText = 'Copy Snippet', 2000);
+        });
+
+        document.getElementById('btnClear').addEventListener('click', () => {
+            snapshots.length = 0;
+            gcEvents.length = 0;
+            lastGCCount = 0;
+            isTesting = false;
+            testStartTime = null;
+            testEndTime = null;
+            pendingTestResult = false;
+            updateTesterUI();
+            updateCards(null);
+            drawChart();
+            updateGCTimeline();
+            warningBanner.classList.remove('visible');
+            liveView.classList.remove('active');
+            emptyState.style.display = 'flex';
+            vscode.postMessage({ type: 'clearSnapshots' });
+        });
+
+        document.getElementById('btnForceGC').addEventListener('click', () => {
+            vscode.postMessage({ type: 'requestGC' });
+        });
+
+        // ── Leak Tester Logic ──
+        btnToggleTest.addEventListener('click', () => {
+            if (!isTesting) {
+                // START TEST
+                isTesting = true;
+                testStartTime = Date.now();
+                testEndTime = null;
+                pendingTestResult = false;
+                
+                // Get baseline from latest snapshot
+                if (snapshots.length > 0) {
+                    testBaselineMB = snapshots[snapshots.length - 1].heapUsed / (1024 * 1024);
+                } else {
+                    testBaselineMB = 0;
+                }
+                
+                updateTesterUI();
+                drawChart();
+            } else {
+                // END TEST
+                isTesting = false;
+                testEndTime = Date.now();
+                pendingTestResult = true;
+                
+                // Force GC to get a clean final reading
+                vscode.postMessage({ type: 'requestGC' });
+                
+                updateTesterUI();
+                drawChart();
+            }
+        });
+
+        function updateTesterUI() {
+            if (isTesting) {
+                btnToggleTest.textContent = '⏹ End Test & Analyze';
+                btnToggleTest.className = 'btn-test testing';
+                testerResult.className = 'tester-result info';
+                testerResult.innerHTML = `Baseline: ${testBaselineMB.toFixed(1)} MB. Open a screen, then go back...`;
+            } else if (pendingTestResult) {
+                btnToggleTest.textContent = '▶ Start Test';
+                btnToggleTest.className = 'btn-test';
+                btnToggleTest.disabled = true;
+                testerResult.className = 'tester-result info';
+                testerResult.innerHTML = `Waiting for GC to finish...`;
+            } else {
+                btnToggleTest.textContent = '▶ Start Test';
+                btnToggleTest.className = 'btn-test';
+                btnToggleTest.disabled = false;
+            }
+        }
+
+        // ── Helpers ──
+        function formatMB(bytes) {
+            if (!bytes && bytes !== 0) return '--';
+            return (bytes / (1024 * 1024)).toFixed(1);
+        }
+
+        function getPathLength() {
+            const r = 15.9155;
+            return 2 * Math.PI * r;
+        }
+
+        // ── Update Dashboard Cards ──
+        let peakHeap = 0;
+
+        function updateCards(snap) {
+            if (!snap) {
+                heapValue.textContent = '--';
+                heapSub.textContent = 'peak: -- MB';
+                gaugePercent.textContent = '0%';
+                gaugeArc.setAttribute('stroke-dasharray', '0, 100');
+                gaugeArc.className.baseVal = 'gauge-fill';
+                trendValue.textContent = '→ Stable';
+                trendValue.className = 'card-value trend-stable';
+                trendSub.textContent = 'Heap is holding steady';
+                gcValue.textContent = '0';
+                gcSub.textContent = 'collections';
+                peakHeap = 0;
+                return;
+            }
+
+            // Track peak heap
+            if (snap.heapUsed > peakHeap) peakHeap = snap.heapUsed;
+
+            // Heap gauge — only use heapTotal if it's genuinely different from heapUsed
+            // If heapTotal == heapUsed, it means Hermes didn't provide a real total (our fallback kicked in)
+            const usedMB = formatMB(snap.heapUsed);
+            const hasRealTotal = snap.heapTotal && snap.heapTotal > 0 && snap.heapTotal !== snap.heapUsed;
+            const refHeap = hasRealTotal ? snap.heapTotal : peakHeap * 1.5;
+            const percent = refHeap > 0 ? Math.round((snap.heapUsed / refHeap) * 100) : 0;
+
+            heapValue.textContent = `${usedMB} MB`;
+            heapSub.textContent = hasRealTotal ? `of ${formatMB(snap.heapTotal)} MB total` : `peak: ${formatMB(peakHeap)} MB`;
+            gaugePercent.textContent = `${Math.min(percent, 100)}%`;
+            gaugeArc.setAttribute('stroke-dasharray', `${Math.min(percent, 100)}, 100`);
+
+            if (percent > 80) {
+                gaugeArc.className.baseVal = 'gauge-fill danger';
+            } else if (percent > 60) {
+                gaugeArc.className.baseVal = 'gauge-fill warning';
+            } else {
+                gaugeArc.className.baseVal = 'gauge-fill';
+            }
+
+            // Trend
+            if (snapshots.length >= 5) {
+                const recent = snapshots.slice(-5);
+                const first = recent[0].heapUsed;
+                const last = recent[recent.length - 1].heapUsed;
+                const diff = last - first;
+                const diffMB = (diff / (1024 * 1024)).toFixed(1);
+
+                if (diff > 500000) {
+                    trendValue.textContent = `↑ Growing`;
+                    trendValue.className = 'card-value trend-up';
+                    trendSub.textContent = `+${diffMB} MB in last ${recent.length * 2}s`;
+                } else if (diff < -500000) {
+                    trendValue.textContent = `↓ Shrinking`;
+                    trendValue.className = 'card-value trend-down';
+                    trendSub.textContent = `${diffMB} MB in last ${recent.length * 2}s`;
+                } else {
+                    trendValue.textContent = `→ Stable`;
+                    trendValue.className = 'card-value trend-stable';
+                    trendSub.textContent = 'Heap is holding steady';
+                }
+            }
+
+            // GC
+            gcValue.textContent = snap.gcCount;
+            if (snap.gcTime) {
+                const avgGcMs = snap.gcCount > 0 ? (snap.gcTime / snap.gcCount).toFixed(1) : 0;
+                gcSub.textContent = `collections (avg ${avgGcMs}ms)`;
+            } else {
+                gcSub.textContent = 'collections';
+            }
+
+            // Check if we are waiting for a test result after GC
+            if (pendingTestResult && gcEvents.length > 0) {
+                // If a GC just happened, calculate the result
+                const latestGC = gcEvents[gcEvents.length - 1];
+                if (latestGC.timestamp >= testEndTime) {
+                    pendingTestResult = false;
+                    const finalMB = latestGC.heapAfter / (1024 * 1024);
+                    const diffMB = finalMB - testBaselineMB;
+                    
+                    if (diffMB > 0.5) {
+                        testerResult.className = 'tester-result warning';
+                        testerResult.innerHTML = `⚠️ +${diffMB.toFixed(1)} MB leaked`;
+                        warningBanner.classList.add('visible');
+                    } else {
+                        testerResult.className = 'tester-result pass';
+                        testerResult.innerHTML = `✅ Pass (No leak)`;
+                        warningBanner.classList.remove('visible');
+                    }
+                    updateTesterUI();
+                }
+            }
+            if (snap.gcCount > lastGCCount && lastGCCount > 0) {
+                const prevSnap = snapshots.length >= 2 ? snapshots[snapshots.length - 2] : null;
+                const freed = prevSnap ? prevSnap.heapUsed - snap.heapUsed : 0;
+                gcEvents.push({
+                    timestamp: snap.timestamp,
+                    heapAfter: snap.heapUsed,
+                    freed: freed
+                });
+                if (gcEvents.length > 20) gcEvents.shift();
+
+                updateGCTimeline();
+            }
+            lastGCCount = snap.gcCount;
+        }
+
+        // ── GC Timeline ──
+        function updateGCTimeline() {
+            const container = document.getElementById('gcTimeline');
+            if (gcEvents.length === 0) {
+                container.innerHTML = '<div style="color: var(--vscode-descriptionForeground); font-size: 12px; padding: 8px 0;">Waiting for GC events...</div>';
+                return;
+            }
+            container.innerHTML = gcEvents.slice(-8).reverse().map(ev => {
+                const time = new Date(ev.timestamp).toLocaleTimeString();
+                const freedMB = formatMB(ev.freed > 0 ? ev.freed : 0);
+                const afterMB = formatMB(ev.heapAfter);
+                return `
+                    <div class="gc-event">
+                        <div class="gc-dot"></div>
+                        <div class="gc-time">${time}</div>
+                        <div>Heap after: <strong>${afterMB} MB</strong></div>
+                        <div class="gc-freed">${ev.freed > 0 ? `−${freedMB} MB freed` : ''}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ── Draw Chart ──
+        function drawChart() {
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+
+            const w = rect.width;
+            const h = rect.height;
+            const pad = { top: 10, right: 10, bottom: 30, left: 50 };
+            const chartW = w - pad.left - pad.right;
+            const chartH = h - pad.top - pad.bottom;
+
+            ctx.clearRect(0, 0, w, h);
+
+            if (snapshots.length < 2) {
+                ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--vscode-descriptionForeground') || '#888';
+                ctx.font = '12px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('Waiting for data...', w / 2, h / 2);
+                return;
+            }
+
+            // Determine Y range
+            let maxVal = 0;
+            for (const s of snapshots) {
+                if (s.heapTotal > maxVal) maxVal = s.heapTotal;
+                if (s.heapUsed > maxVal) maxVal = s.heapUsed;
+            }
+            maxVal = maxVal * 1.15; // Add 15% headroom
+
+            const xStep = chartW / (snapshots.length - 1);
+
+            // Grid lines
+            const gridColor = getComputedStyle(document.body).getPropertyValue('--vscode-panel-border') || '#333';
+            const textColor = getComputedStyle(document.body).getPropertyValue('--vscode-descriptionForeground') || '#888';
+            ctx.strokeStyle = gridColor;
+            ctx.lineWidth = 0.5;
+            ctx.font = '10px sans-serif';
+            ctx.fillStyle = textColor;
+            ctx.textAlign = 'right';
+
+            for (let i = 0; i <= 4; i++) {
+                const y = pad.top + chartH - (i / 4) * chartH;
+                const val = formatMB((i / 4) * maxVal);
+                ctx.beginPath();
+                ctx.moveTo(pad.left, y);
+                ctx.lineTo(w - pad.right, y);
+                ctx.stroke();
+                ctx.fillText(`${val} MB`, pad.left - 5, y + 3);
+            }
+
+            // Time labels
+            ctx.textAlign = 'center';
+            const labelInterval = Math.max(1, Math.floor(snapshots.length / 5));
+            for (let i = 0; i < snapshots.length; i += labelInterval) {
+                const x = pad.left + i * xStep;
+                const time = new Date(snapshots[i].timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                ctx.fillText(time, x, h - pad.bottom + 15);
+            }
+            
+            // Draw Test Region Highlight
+            if (testStartTime) {
+                const startIdx = snapshots.findIndex(s => s.timestamp >= testStartTime);
+                const endIdx = testEndTime ? snapshots.findIndex(s => s.timestamp >= testEndTime) : snapshots.length - 1;
+                
+                if (startIdx >= 0) {
+                    const startX = pad.left + startIdx * xStep;
+                    const endX = endIdx >= 0 ? pad.left + endIdx * xStep : w - pad.right;
+                    
+                    ctx.fillStyle = 'rgba(244, 67, 54, 0.08)'; // Subtle red highlight
+                    ctx.fillRect(startX, pad.top, endX - startX, chartH);
+                    
+                    // Vertical borders
+                    ctx.strokeStyle = 'rgba(244, 67, 54, 0.4)';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(startX, pad.top);
+                    ctx.lineTo(startX, pad.top + chartH);
+                    if (testEndTime && endIdx >= 0) {
+                        ctx.moveTo(endX, pad.top);
+                        ctx.lineTo(endX, pad.top + chartH);
+                    }
+                    ctx.stroke();
+                }
+            }
+
+            // Draw Heap Total (filled area)
+            ctx.beginPath();
+            ctx.moveTo(pad.left, pad.top + chartH);
+            for (let i = 0; i < snapshots.length; i++) {
+                const x = pad.left + i * xStep;
+                const y = pad.top + chartH - (snapshots[i].heapTotal / maxVal) * chartH;
+                ctx.lineTo(x, y);
+            }
+            ctx.lineTo(pad.left + (snapshots.length - 1) * xStep, pad.top + chartH);
+            ctx.closePath();
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
+            ctx.fill();
+
+            // Draw Heap Used (line + gradient fill)
+            ctx.beginPath();
+            for (let i = 0; i < snapshots.length; i++) {
+                const x = pad.left + i * xStep;
+                const y = pad.top + chartH - (snapshots[i].heapUsed / maxVal) * chartH;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.strokeStyle = '#4fc3f7';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Fill under the line
+            const lastX = pad.left + (snapshots.length - 1) * xStep;
+            ctx.lineTo(lastX, pad.top + chartH);
+            ctx.lineTo(pad.left, pad.top + chartH);
+            ctx.closePath();
+            const grad = ctx.createLinearGradient(0, pad.top, 0, pad.top + chartH);
+            grad.addColorStop(0, 'rgba(79, 195, 247, 0.25)');
+            grad.addColorStop(1, 'rgba(79, 195, 247, 0.02)');
+            ctx.fillStyle = grad;
+            ctx.fill();
+
+            // Draw GC markers
+            for (const gc of gcEvents) {
+                const idx = snapshots.findIndex(s => s.timestamp >= gc.timestamp);
+                if (idx >= 0) {
+                    const x = pad.left + idx * xStep;
+                    const y = pad.top + chartH - (snapshots[idx].heapUsed / maxVal) * chartH;
+                    ctx.beginPath();
+                    ctx.arc(x, y, 4, 0, Math.PI * 2);
+                    ctx.fillStyle = '#ab47bc';
+                    ctx.fill();
+                    ctx.strokeStyle = 'rgba(171, 71, 188, 0.4)';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                }
+            }
+        }
+
+        // ── Handle Messages from Extension ──
+        window.addEventListener('message', event => {
+            const message = event.data;
+            switch (message.type) {
+                case 'serverStatus':
+                    if (message.status === 'listening') {
+                        statusIndicator.className = 'status-indicator listening';
+                        statusText.textContent = `Server listening on port ${message.port}`;
+                        const snippetPortEl = document.getElementById('snippetPort');
+                        if (snippetPortEl) {
+                            snippetPortEl.textContent = message.port;
+                        }
+                    }
+                    break;
+                case 'clientStatus':
+                    if (message.count > 0) {
+                        statusIndicator.className = 'status-indicator connected';
+                        statusText.textContent = `${message.count} App(s) Connected`;
+                    } else {
+                        statusIndicator.className = 'status-indicator listening';
+                        statusText.textContent = 'Server listening (0 apps connected)';
+                    }
+                    break;
+                case 'memorySnapshot':
+                    emptyState.style.display = 'none';
+                    liveView.classList.add('active');
+
+                    snapshots.push(message.data);
+                    if (snapshots.length > 150) snapshots.shift();
+
+                    updateCards(message.data);
+                    drawChart();
+                    break;
+            }
+        });
+
+        // Resize chart on window resize
+        window.addEventListener('resize', () => {
+            if (snapshots.length > 0) drawChart();
+        });
+    </script>
+</body>
+</html>

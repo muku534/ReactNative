@@ -45,6 +45,11 @@
         "command": "reactnative.openNetworkMonitor",
         "title": "React Native: Open Network Monitor",
         "category": "ReactNative"
+      },
+      {
+        "command": "reactnative.openMemoryMonitor",
+        "title": "React Native: Open Memory Monitor",
+        "category": "ReactNative"
       }
     ],
     "viewsContainers": {
@@ -82,6 +87,11 @@
           "type": "number",
           "default": 8347,
           "description": "Port used by the React Native Network Monitor WebSocket server."
+        },
+        "reactnative.memoryMonitorPort": {
+          "type": "number",
+          "default": 8348,
+          "description": "Port used by the React Native Memory Monitor WebSocket server."
         }
       }
     }

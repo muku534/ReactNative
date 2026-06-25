@@ -4,6 +4,7 @@ import * as os from 'os';
 import { exec } from 'child_process';
 import { SidebarProvider } from './sidebarProvider';
 import { NetworkPanelManager } from './networkPanelProvider';
+import { MemoryPanelManager } from './memoryPanelProvider';
 
 export function activate(context: vscode.ExtensionContext) {
 
@@ -134,6 +135,12 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.commands.registerCommand('reactnative.openNetworkMonitor', () => {
             NetworkPanelManager.createOrShow(context.extensionUri);
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('reactnative.openMemoryMonitor', () => {
+            MemoryPanelManager.createOrShow(context.extensionUri);
         })
     );
 }
