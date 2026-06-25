@@ -6,6 +6,14 @@ The ultimate workspace companion for React Native CLI and Expo developers. Creat
 
 ---
 
+## ✨ What's New in v1.4.0 — Memory Monitor & Leak Tester
+
+Stop guessing where your memory leaks are! The new Memory Monitor hooks directly into the Hermes engine to provide real-time memory usage charts directly in VS Code. 
+
+Even better, it includes a **Screen Leak Tester**. Drop a single hook into your React Navigation, and the extension will automatically track exactly how many megabytes are leaked every time you visit a screen, providing a detailed step-by-step timeline report! (`Cmd+Shift+P` -> `React Native: Open Memory Monitor`).
+
+---
+
 ## ✨ What's New in v1.3.4 — Network Monitor (In-Editor DevTools)
 
 Say goodbye to external network debuggers! The new Network Monitor lets you track all network requests (Fetch and Axios) directly inside a dedicated VS Code tab. Just type `Cmd+Shift+P` -> `React Native: Open Network Monitor` to inspect URLs, methods, headers, payloads, and responses natively!
@@ -42,6 +50,12 @@ See the extension in action! Watch how easy it is to boot devices and run your a
 ---
 
 ## Key Features
+
+### 🧠 Memory Monitor (v1.4.0)
+- **Real-time Engine Stats**: Bypasses traditional dev tools by pulling instrumented stats directly from the Hermes engine.
+- **High-Performance Charting**: Built on pure HTML5 Canvas to ensure 60fps tracking without eating your computer's RAM.
+- **Screen Leak Profiler**: Tracks memory consumption *per screen* using React Navigation and provides a timeline report of exact MBs leaked during screen transitions.
+- **Force GC**: Trigger garbage collection on-demand directly from VS Code.
 
 ### 📡 Network Monitor (v1.3.4)
 - **In-Editor Network Tab**: Inspect network calls natively inside VS Code (`Cmd+Shift+P` -> `React Native: Open Network Monitor`).
@@ -172,7 +186,10 @@ You can customize the commands executed by the extension when the Run button is 
 
 ## Release Notes
 
-### v1.3.5 (Latest)
+### v1.4.0 (Latest)
+- 🧠 **Memory Monitor**: Added a real-time Memory Monitor tab inside VS Code with a built-in Screen Leak Tester. Tracks exact megabytes leaked per React Navigation screen. Accessible via Command Palette (`React Native: Open Memory Monitor`).
+
+### v1.3.5
 - 🐛 **Missing Module Fix**: Fixed a critical bug where the `ws` (WebSocket) module was not bundled in the extension, causing activation failures for the Network Monitor.
 
 ### v1.3.4

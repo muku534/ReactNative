@@ -81,13 +81,16 @@ export class MemoryPanelManager {
             this._panel.webview.postMessage({ type: 'clientStatus', count });
         });
 
-        this.memoryServer.on('snapshot', (snapshot: MemorySnapshot) => {
-            this.snapshots.push(snapshot);
-            // Keep last 150 snapshots (5 min at 2s interval)
-            if (this.snapshots.length > 150) {
-                this.snapshots.shift();
+        this.memoryServer.on('snapshot', (data: any) => {
+            if (data.type === 'memory') {
+                this.snapshots.push(data);
+                if (this.snapshots.length > 150) {
+                    this.snapshots.shift();
+                }
+                this._panel.webview.postMessage({ type: 'memorySnapshot', data: data });
+            } else if (data.type === 'screen_change') {
+                this._panel.webview.postMessage({ type: 'screenChange', data: data });
             }
-            this._panel.webview.postMessage({ type: 'memorySnapshot', data: snapshot });
         });
 
         try {

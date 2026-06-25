@@ -114,43 +114,6 @@
             color: var(--vscode-descriptionForeground);
         }
 
-        /* ── Gauge ── */
-        .gauge-container {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-        .gauge-svg {
-            width: 60px;
-            height: 60px;
-            flex-shrink: 0;
-        }
-        .gauge-bg {
-            fill: none;
-            stroke: var(--vscode-panel-border);
-            stroke-width: 6;
-        }
-        .gauge-fill {
-            fill: none;
-            stroke: var(--vscode-charts-blue);
-            stroke-width: 6;
-            stroke-linecap: round;
-            transition: stroke-dashoffset 0.6s ease, stroke 0.3s ease;
-        }
-        .gauge-fill.warning {
-            stroke: var(--vscode-charts-yellow);
-        }
-        .gauge-fill.danger {
-            stroke: var(--vscode-charts-red);
-        }
-        .gauge-text {
-            fill: var(--vscode-foreground);
-            font-size: 11px;
-            font-weight: 700;
-            text-anchor: middle;
-            dominant-baseline: central;
-        }
-
         /* ── Trend Arrow ── */
         .trend-up { color: var(--vscode-charts-red); }
         .trend-stable { color: var(--vscode-charts-green); }
@@ -190,6 +153,16 @@
             padding: 8px 12px;
             border-radius: 4px;
             display: none;
+            transition: opacity 0.2s;
+        }
+        
+        .tester-result.clickable {
+            cursor: pointer;
+        }
+        
+        .tester-result.clickable:hover {
+            opacity: 0.8;
+            box-shadow: 0 0 8px rgba(0,0,0,0.2);
         }
         .tester-result.pass {
             display: block;
@@ -378,7 +351,125 @@
             .tester-actions {
                 width: 100%;
                 justify-content: space-between;
+                margin-top: 12px;
             }
+        }
+
+        /* ── Modal ── */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(2px);
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--vscode-editorWidget-background);
+            border: 1px solid var(--vscode-panel-border);
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        .modal-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--vscode-panel-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            background: transparent;
+            border: none;
+            color: var(--vscode-foreground);
+            font-size: 20px;
+            cursor: pointer;
+            opacity: 0.7;
+        }
+
+        .modal-close:hover {
+            opacity: 1;
+        }
+
+        .modal-body {
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .timeline-item {
+            display: flex;
+            margin-bottom: 16px;
+            position: relative;
+        }
+        
+        .timeline-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .timeline-time {
+            width: 80px;
+            font-size: 12px;
+            color: var(--vscode-descriptionForeground);
+            flex-shrink: 0;
+            padding-top: 2px;
+        }
+
+        .timeline-content {
+            flex: 1;
+            padding-left: 16px;
+            border-left: 2px solid var(--vscode-panel-border);
+            position: relative;
+        }
+        
+        .timeline-dot {
+            position: absolute;
+            left: -6px;
+            top: 4px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--vscode-charts-blue);
+        }
+
+        .timeline-dot.danger {
+            background: var(--vscode-charts-red);
+        }
+        
+        .timeline-dot.success {
+            background: var(--vscode-charts-green);
+        }
+
+        .timeline-screen {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .timeline-diff {
+            font-size: 13px;
+        }
+        
+        .timeline-diff.danger {
+            color: var(--vscode-charts-red);
+            font-weight: 600;
         }
     </style>
 </head>
@@ -388,6 +479,10 @@
         <div class="status-badge">
             <div id="statusIndicator" class="status-indicator"></div>
             <span id="statusText">Starting server...</span>
+        </div>
+        <div class="status-badge" style="margin-left: 16px; border-left: 1px solid var(--vscode-panel-border); padding-left: 16px;">
+            <span style="color: var(--vscode-descriptionForeground);">Current Screen:</span>
+            <span id="currentScreenText" style="font-weight: 600;">Unknown</span>
         </div>
         <div class="toolbar-spacer"></div>
         <button id="btnForceGC" class="primary-btn" title="Request garbage collection">🗑️ Force GC</button>
@@ -402,34 +497,7 @@
             <h2 style="margin: 0 0 10px; color: var(--vscode-foreground);">Memory Monitor</h2>
             <p style="margin: 0 0 20px; max-width: 500px;">Track your React Native app's memory usage in real-time. Add this snippet to your app's entry file (e.g., <code>App.js</code> or <code>index.js</code>).</p>
 
-            <div class="setup-snippet" id="snippetCode">if (__DEV__) {
-  const memWs = new WebSocket('ws://localhost:<span id="snippetPort">8348</span>');
-
-  // Listen for Force GC requests from VS Code
-  memWs.onmessage = (e) => {
-    try {
-      const msg = JSON.parse(e.data);
-      if (msg.type === 'forceGC' && global.gc) global.gc();
-    } catch(err) {}
-  };
-
-  setInterval(() => {
-    if (memWs.readyState === WebSocket.OPEN && global.HermesInternal) {
-      const stats = global.HermesInternal.getInstrumentedStats();
-      memWs.send(JSON.stringify({
-        type: 'memory',
-        timestamp: Date.now(),
-        heapUsed: stats.js_heapSize || 0,
-        heapTotal: stats.js_totalHeapSize || stats.js_heapSize || 0,
-        gcCount: stats.js_numGCs || 0,
-        gcTime: stats.js_gcTime || 0,
-        mallocSize: stats.js_mallocSize || 0,
-        objectCount: stats.js_numLiveObjects || 0,
-        externalBytes: stats.js_externalBytes || 0
-      }));
-    }
-  }, 1000);
-}</div>
+            <div class="setup-snippet" id="snippetCode"></div>
             <button id="btnCopySnippet" style="background: var(--vscode-button-background); color: var(--vscode-button-foreground); border: none; padding: 8px 16px; border-radius: 2px; cursor: pointer;">Copy Snippet</button>
         </div>
 
@@ -446,17 +514,8 @@
             <div class="dashboard" style="grid-template-columns: repeat(3, 1fr);">
                 <div class="card">
                     <div class="card-label">🧠 Heap Used</div>
-                    <div class="gauge-container">
-                        <svg class="gauge-svg" viewBox="0 0 36 36">
-                            <path class="gauge-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
-                            <path id="gaugeArc" class="gauge-fill" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" stroke-dasharray="0, 100"/>
-                            <text id="gaugePercent" class="gauge-text" x="18" y="18">0%</text>
-                        </svg>
-                        <div>
-                            <div id="heapValue" class="card-value">--</div>
-                            <div id="heapSub" class="card-sub">peak: -- MB</div>
-                        </div>
-                    </div>
+                    <div id="heapValue" class="card-value" style="font-size: 32px;">--</div>
+                    <div id="heapSub" class="card-sub">peak: -- MB</div>
                 </div>
 
                 <div class="card">
@@ -507,6 +566,18 @@
             </div>
         </div>
 
+        <!-- Modal -->
+        <div id="reportModal" class="modal-overlay">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title">🧪 Screen Leak Report</div>
+                    <button id="btnModalClose" class="modal-close">×</button>
+                </div>
+                <div class="modal-body" id="modalBody">
+                    <!-- Timeline injected here -->
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -517,23 +588,68 @@
         const gcEvents = [];
         let lastGCCount = 0;
         
+        function renderSnippet(port) {
+            const el = document.getElementById('snippetCode');
+            if (!el) return;
+            el.innerHTML = `if (__DEV__) {
+  global.memWs = new WebSocket('ws://localhost:<span id="snippetPort">${port}</span>');
+
+  global.memWs.onmessage = (e) => {
+    try {
+      if (JSON.parse(e.data).type === 'forceGC' && global.gc) global.gc();
+    } catch(err) {}
+  };
+
+  setInterval(() => {
+    if (global.memWs.readyState === WebSocket.OPEN && global.HermesInternal) {
+      const stats = global.HermesInternal.getInstrumentedStats();
+      global.memWs.send(JSON.stringify({
+        type: 'memory',
+        timestamp: Date.now(),
+        heapUsed: stats.js_heapSize || 0,
+        heapTotal: stats.js_totalHeapSize || stats.js_heapSize || 0,
+        gcCount: stats.js_numGCs || 0,
+        gcTime: stats.js_gcTime || 0,
+        mallocSize: stats.js_mallocSize || 0,
+        objectCount: stats.js_numLiveObjects || 0,
+        externalBytes: stats.js_externalBytes || 0
+      }));
+    }
+  }, 1000);
+}
+
+// ── OPTIONAL: React Navigation Tracker ──
+// Add this to your NavigationContainer to auto-detect leaking screens:
+/*
+&lt;NavigationContainer onStateChange={(state) => {
+    if (__DEV__ && global.memWs?.readyState === WebSocket.OPEN) {
+        const currentRoute = state.routes[state.index].name;
+        global.memWs.send(JSON.stringify({ type: 'screen_change', screen: currentRoute }));
+    }
+}}&gt;
+*/`;
+        }
+        
+        renderSnippet(8348); // Initial render with default port
+        
         // Tester State
         let isTesting = false;
         let testStartTime = null;
         let testEndTime = null;
         let testBaselineMB = 0;
         let pendingTestResult = false;
+        let currentScreen = 'Unknown';
+        let visitedScreens = []; // Array of { screen, timestamp, heapUsed }
+        let testFinalMB = 0;
+        let latestHeapUsed = 0;
 
         // DOM
         const statusIndicator = document.getElementById('statusIndicator');
         const statusText = document.getElementById('statusText');
+        const currentScreenText = document.getElementById('currentScreenText');
         const emptyState = document.getElementById('emptyState');
         const liveView = document.getElementById('liveView');
         const warningBanner = document.getElementById('warningBanner');
-
-        // Gauge
-        const gaugeArc = document.getElementById('gaugeArc');
-        const gaugePercent = document.getElementById('gaugePercent');
 
         // Cards
         const heapValue = document.getElementById('heapValue');
@@ -567,6 +683,8 @@
             testStartTime = null;
             testEndTime = null;
             pendingTestResult = false;
+            visitedScreens = [];
+            testFinalMB = 0;
             updateTesterUI();
             updateCards(null);
             drawChart();
@@ -589,6 +707,12 @@
                 testStartTime = Date.now();
                 testEndTime = null;
                 pendingTestResult = false;
+                testFinalMB = 0;
+                visitedScreens = [{
+                    screen: currentScreen,
+                    timestamp: Date.now(),
+                    heapUsed: latestHeapUsed
+                }];
                 
                 // Get baseline from latest snapshot
                 if (snapshots.length > 0) {
@@ -638,11 +762,6 @@
             return (bytes / (1024 * 1024)).toFixed(1);
         }
 
-        function getPathLength() {
-            const r = 15.9155;
-            return 2 * Math.PI * r;
-        }
-
         // ── Update Dashboard Cards ──
         let peakHeap = 0;
 
@@ -650,9 +769,6 @@
             if (!snap) {
                 heapValue.textContent = '--';
                 heapSub.textContent = 'peak: -- MB';
-                gaugePercent.textContent = '0%';
-                gaugeArc.setAttribute('stroke-dasharray', '0, 100');
-                gaugeArc.className.baseVal = 'gauge-fill';
                 trendValue.textContent = '→ Stable';
                 trendValue.className = 'card-value trend-stable';
                 trendSub.textContent = 'Heap is holding steady';
@@ -665,25 +781,11 @@
             // Track peak heap
             if (snap.heapUsed > peakHeap) peakHeap = snap.heapUsed;
 
-            // Heap gauge — only use heapTotal if it's genuinely different from heapUsed
-            // If heapTotal == heapUsed, it means Hermes didn't provide a real total (our fallback kicked in)
             const usedMB = formatMB(snap.heapUsed);
-            const hasRealTotal = snap.heapTotal && snap.heapTotal > 0 && snap.heapTotal !== snap.heapUsed;
-            const refHeap = hasRealTotal ? snap.heapTotal : peakHeap * 1.5;
-            const percent = refHeap > 0 ? Math.round((snap.heapUsed / refHeap) * 100) : 0;
-
+            latestHeapUsed = snap.heapUsed;
+            
             heapValue.textContent = `${usedMB} MB`;
-            heapSub.textContent = hasRealTotal ? `of ${formatMB(snap.heapTotal)} MB total` : `peak: ${formatMB(peakHeap)} MB`;
-            gaugePercent.textContent = `${Math.min(percent, 100)}%`;
-            gaugeArc.setAttribute('stroke-dasharray', `${Math.min(percent, 100)}, 100`);
-
-            if (percent > 80) {
-                gaugeArc.className.baseVal = 'gauge-fill danger';
-            } else if (percent > 60) {
-                gaugeArc.className.baseVal = 'gauge-fill warning';
-            } else {
-                gaugeArc.className.baseVal = 'gauge-fill';
-            }
+            heapSub.textContent = `peak: ${formatMB(peakHeap)} MB`;
 
             // Trend
             if (snapshots.length >= 5) {
@@ -724,15 +826,18 @@
                 if (latestGC.timestamp >= testEndTime) {
                     pendingTestResult = false;
                     const finalMB = latestGC.heapAfter / (1024 * 1024);
+                    testFinalMB = finalMB;
                     const diffMB = finalMB - testBaselineMB;
                     
                     if (diffMB > 0.5) {
-                        testerResult.className = 'tester-result warning';
-                        testerResult.innerHTML = `⚠️ +${diffMB.toFixed(1)} MB leaked`;
+                        const uniqueScreens = new Set(visitedScreens.map(s => s.screen));
+                        const screensList = uniqueScreens.size > 0 ? Array.from(uniqueScreens).join(', ') : 'Unknown (Add Navigation hook!)';
+                        testerResult.className = 'tester-result warning clickable';
+                        testerResult.innerHTML = `⚠️ +${diffMB.toFixed(1)} MB leaked<br><span style="font-size: 11px; color: var(--vscode-foreground); opacity: 0.8; font-weight: normal;">${uniqueScreens.size} Culprits (Click for details)</span>`;
                         warningBanner.classList.add('visible');
                     } else {
-                        testerResult.className = 'tester-result pass';
-                        testerResult.innerHTML = `✅ Pass (No leak)`;
+                        testerResult.className = 'tester-result pass clickable';
+                        testerResult.innerHTML = `✅ Pass (No leak)<br><span style="font-size: 11px; color: var(--vscode-foreground); opacity: 0.8; font-weight: normal;">Click for details</span>`;
                         warningBanner.classList.remove('visible');
                     }
                     updateTesterUI();
@@ -916,6 +1021,75 @@
             }
         }
 
+        // ── Modal Logic ──
+        const reportModal = document.getElementById('reportModal');
+        const btnModalClose = document.getElementById('btnModalClose');
+        const modalBody = document.getElementById('modalBody');
+
+        testerResult.addEventListener('click', () => {
+            if (isTesting || pendingTestResult) return;
+            showReportModal();
+        });
+
+        btnModalClose.addEventListener('click', () => {
+            reportModal.classList.remove('active');
+        });
+
+        function showReportModal() {
+            let html = '';
+            
+            // Start node
+            html += `
+            <div class="timeline-item">
+                <div class="timeline-time">${new Date(testStartTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</div>
+                <div class="timeline-content">
+                    <div class="timeline-dot success"></div>
+                    <div class="timeline-screen">Test Started</div>
+                    <div class="timeline-diff" style="color: var(--vscode-descriptionForeground);">Baseline: ${testBaselineMB.toFixed(1)} MB</div>
+                </div>
+            </div>`;
+
+            // Screen nodes
+            let prevHeapMB = testBaselineMB;
+            for (let i = 1; i < visitedScreens.length; i++) {
+                const visit = visitedScreens[i];
+                const currentHeapMB = visit.heapUsed / (1024 * 1024);
+                const stepDiff = currentHeapMB - prevHeapMB;
+                const isLeak = stepDiff > 0.5;
+                
+                const timeStr = new Date(visit.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                const diffStr = stepDiff > 0 ? `+${stepDiff.toFixed(1)}` : stepDiff.toFixed(1);
+                
+                html += `
+                <div class="timeline-item">
+                    <div class="timeline-time">${timeStr}</div>
+                    <div class="timeline-content">
+                        <div class="timeline-dot ${isLeak ? 'danger' : ''}"></div>
+                        <div class="timeline-screen">Visited: ${visit.screen}</div>
+                        <div class="timeline-diff ${isLeak ? 'danger' : ''}">${diffStr} MB (${currentHeapMB.toFixed(1)} MB total)</div>
+                    </div>
+                </div>`;
+                
+                prevHeapMB = currentHeapMB;
+            }
+
+            // End node
+            const totalDiff = testFinalMB - testBaselineMB;
+            const isTotalLeak = totalDiff > 0.5;
+            html += `
+            <div class="timeline-item">
+                <div class="timeline-time">${new Date(testEndTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</div>
+                <div class="timeline-content" style="border-left: none;">
+                    <div class="timeline-dot ${isTotalLeak ? 'danger' : 'success'}"></div>
+                    <div class="timeline-screen">Test Ended (After GC)</div>
+                    <div class="timeline-diff ${isTotalLeak ? 'danger' : ''}" style="font-weight: 600;">Final: ${testFinalMB.toFixed(1)} MB (Total Diff: ${totalDiff > 0 ? '+' : ''}${totalDiff.toFixed(1)} MB)</div>
+                </div>
+            </div>`;
+
+            modalBody.innerHTML = html;
+            reportModal.classList.add('active');
+        }
+
         // ── Handle Messages from Extension ──
         window.addEventListener('message', event => {
             const message = event.data;
@@ -924,10 +1098,7 @@
                     if (message.status === 'listening') {
                         statusIndicator.className = 'status-indicator listening';
                         statusText.textContent = `Server listening on port ${message.port}`;
-                        const snippetPortEl = document.getElementById('snippetPort');
-                        if (snippetPortEl) {
-                            snippetPortEl.textContent = message.port;
-                        }
+                        renderSnippet(message.port);
                     }
                     break;
                 case 'clientStatus':
@@ -948,6 +1119,17 @@
 
                     updateCards(message.data);
                     drawChart();
+                    break;
+                case 'screenChange':
+                    currentScreen = message.data.screen;
+                    currentScreenText.textContent = currentScreen;
+                    if (isTesting) {
+                        visitedScreens.push({
+                            screen: currentScreen,
+                            timestamp: Date.now(),
+                            heapUsed: latestHeapUsed
+                        });
+                    }
                     break;
             }
         });
