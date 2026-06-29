@@ -453,6 +453,10 @@
             background: var(--vscode-charts-red);
         }
         
+        .timeline-dot.warning {
+            background: var(--vscode-charts-yellow);
+        }
+        
         .timeline-dot.success {
             background: var(--vscode-charts-green);
         }
@@ -469,6 +473,10 @@
         
         .timeline-diff.danger {
             color: var(--vscode-charts-red);
+            font-weight: 600;
+        }
+        .timeline-diff.warning {
+            color: var(--vscode-charts-yellow);
             font-weight: 600;
         }
     </style>
@@ -641,9 +649,9 @@
         let currentScreen = 'Unknown';
         let visitedScreens = []; // Array of { screen, timestamp, heapUsed }
         let testFinalMB = 0;
-        let latestHeapUsed = 0;
+        let pendingGCScreenIdx = -1;
 
-        // DOM
+        // Elements
         const statusIndicator = document.getElementById('statusIndicator');
         const statusText = document.getElementById('statusText');
         const currentScreenText = document.getElementById('currentScreenText');
@@ -843,17 +851,25 @@
                     updateTesterUI();
                 }
             }
-            if (snap.gcCount > lastGCCount && lastGCCount > 0) {
-                const prevSnap = snapshots.length >= 2 ? snapshots[snapshots.length - 2] : null;
-                const freed = prevSnap ? prevSnap.heapUsed - snap.heapUsed : 0;
-                gcEvents.push({
-                    timestamp: snap.timestamp,
-                    heapAfter: snap.heapUsed,
-                    freed: freed
-                });
-                if (gcEvents.length > 20) gcEvents.shift();
+            if (snap.gcCount > lastGCCount) {
+                // If we forced a GC to get an accurate screen reading, apply it
+                if (pendingGCScreenIdx !== -1 && visitedScreens[pendingGCScreenIdx]) {
+                    visitedScreens[pendingGCScreenIdx].heapUsed = snap.heapUsed;
+                    pendingGCScreenIdx = -1;
+                }
 
-                updateGCTimeline();
+                if (lastGCCount > 0) {
+                    const prevSnap = snapshots.length >= 2 ? snapshots[snapshots.length - 2] : null;
+                    const freed = prevSnap ? prevSnap.heapUsed - snap.heapUsed : 0;
+                    gcEvents.push({
+                        timestamp: snap.timestamp,
+                        heapAfter: snap.heapUsed,
+                        freed: freed
+                    });
+                    if (gcEvents.length > 20) gcEvents.shift();
+    
+                    updateGCTimeline();
+                }
             }
             lastGCCount = snap.gcCount;
         }
@@ -1055,7 +1071,7 @@
                 const visit = visitedScreens[i];
                 const currentHeapMB = visit.heapUsed / (1024 * 1024);
                 const stepDiff = currentHeapMB - prevHeapMB;
-                const isLeak = stepDiff > 0.5;
+                const isHighAllocation = stepDiff > 0.5;
                 
                 const timeStr = new Date(visit.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
                 const diffStr = stepDiff > 0 ? `+${stepDiff.toFixed(1)}` : stepDiff.toFixed(1);
@@ -1064,9 +1080,9 @@
                 <div class="timeline-item">
                     <div class="timeline-time">${timeStr}</div>
                     <div class="timeline-content">
-                        <div class="timeline-dot ${isLeak ? 'danger' : ''}"></div>
+                        <div class="timeline-dot ${isHighAllocation ? 'warning' : ''}"></div>
                         <div class="timeline-screen">Visited: ${visit.screen}</div>
-                        <div class="timeline-diff ${isLeak ? 'danger' : ''}">${diffStr} MB (${currentHeapMB.toFixed(1)} MB total)</div>
+                        <div class="timeline-diff ${isHighAllocation ? 'warning' : ''}">Allocated ${diffStr} MB (${currentHeapMB.toFixed(1)} MB total)</div>
                     </div>
                 </div>`;
                 
@@ -1129,6 +1145,8 @@
                             timestamp: Date.now(),
                             heapUsed: latestHeapUsed
                         });
+                        pendingGCScreenIdx = visitedScreens.length - 1;
+                        vscode.postMessage({ type: 'requestGC' });
                     }
                     break;
             }
