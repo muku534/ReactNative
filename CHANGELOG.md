@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.3.7] - 2026-06-30
 
 ### Fixed
+- **Screen Leak Timeline Accuracy**: Improved the timeline accuracy by automatically forcing garbage collection (GC) on navigation (`screenChange` events), ensuring precise memory measurements for each screen visit.
 - **Memory Monitor Educational UX**: Improved the Screen Leak Tester by adding navigation state validation. The tool now intelligently distinguishes between actual memory leaks and normal React Navigation retained screens to eliminate false positive warnings.
 
 ## [1.3.6] - 2026-06-25

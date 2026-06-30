@@ -187,6 +187,7 @@ You can customize the commands executed by the extension when the Run button is 
 ## Release Notes
 
 ### v1.3.7 (Latest)
+- 🧠 **Timeline Accuracy Fix**: Improved screen leak timeline accuracy by automatically forcing garbage collection precisely when navigation occurs.
 - 🧠 **Memory Monitor Educational UX**: Added intelligent navigation state tracking to the Screen Leak Profiler. The tool now distinguishes between true memory leaks and active screens retained in the navigation stack, providing friendly educational warnings instead of scary false positives.
 
 ### v1.3.6
