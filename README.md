@@ -6,7 +6,7 @@ The ultimate workspace companion for React Native CLI and Expo developers. Creat
 
 ---
 
-## ✨ What's New in v1.4.0 — Memory Monitor & Leak Tester
+## ✨ What's New in v1.3.7 — Memory Monitor & Leak Tester
 
 Stop guessing where your memory leaks are! The new Memory Monitor hooks directly into the Hermes engine to provide real-time memory usage charts directly in VS Code. 
 
@@ -51,7 +51,7 @@ See the extension in action! Watch how easy it is to boot devices and run your a
 
 ## Key Features
 
-### 🧠 Memory Monitor (v1.4.0)
+### 🧠 Memory Monitor (v1.3.6+)
 - **Real-time Engine Stats**: Bypasses traditional dev tools by pulling instrumented stats directly from the Hermes engine.
 - **High-Performance Charting**: Built on pure HTML5 Canvas to ensure 60fps tracking without eating your computer's RAM.
 - **Screen Leak Profiler**: Tracks memory consumption *per screen* using React Navigation and provides a timeline report of exact MBs leaked during screen transitions.
@@ -186,7 +186,10 @@ You can customize the commands executed by the extension when the Run button is 
 
 ## Release Notes
 
-### v1.4.0 (Latest)
+### v1.3.7 (Latest)
+- 🧠 **Memory Monitor Educational UX**: Added intelligent navigation state tracking to the Screen Leak Profiler. The tool now distinguishes between true memory leaks and active screens retained in the navigation stack, providing friendly educational warnings instead of scary false positives.
+
+### v1.3.6
 - 🧠 **Memory Monitor**: Added a real-time Memory Monitor tab inside VS Code with a built-in Screen Leak Tester. Tracks exact megabytes leaked per React Navigation screen. Accessible via Command Palette (`React Native: Open Memory Monitor`).
 
 ### v1.3.5

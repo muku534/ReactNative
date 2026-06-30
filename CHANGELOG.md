@@ -5,6 +5,11 @@ All notable changes to the React Native Companion extension will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.7] - 2026-06-30
+
+### Fixed
+- **Memory Monitor Educational UX**: Improved the Screen Leak Tester by adding navigation state validation. The tool now intelligently distinguishes between actual memory leaks and normal React Navigation retained screens to eliminate false positive warnings.
+
 ## [1.3.6] - 2026-06-25
 
 ### Added

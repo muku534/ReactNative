@@ -647,6 +647,7 @@
         let testBaselineMB = 0;
         let pendingTestResult = false;
         let currentScreen = 'Unknown';
+        let testStartScreen = null;
         let visitedScreens = []; // Array of { screen, timestamp, heapUsed }
         let testFinalMB = 0;
         let pendingGCScreenIdx = -1;
@@ -716,6 +717,7 @@
                 testEndTime = null;
                 pendingTestResult = false;
                 testFinalMB = 0;
+                testStartScreen = currentScreen;
                 visitedScreens = [{
                     screen: currentScreen,
                     timestamp: Date.now(),
@@ -750,7 +752,7 @@
                 btnToggleTest.textContent = '⏹ End Test & Analyze';
                 btnToggleTest.className = 'btn-test testing';
                 testerResult.className = 'tester-result info';
-                testerResult.innerHTML = `Baseline: ${testBaselineMB.toFixed(1)} MB. Open a screen, then go back...`;
+                testerResult.innerHTML = `Baseline: ${testBaselineMB.toFixed(1)} MB. Return to <b>${testStartScreen}</b> to end.`;
             } else if (pendingTestResult) {
                 btnToggleTest.textContent = '▶ Start Test';
                 btnToggleTest.className = 'btn-test';
@@ -839,10 +841,27 @@
                     
                     if (diffMB > 0.5) {
                         const uniqueScreens = new Set(visitedScreens.map(s => s.screen));
-                        const screensList = uniqueScreens.size > 0 ? Array.from(uniqueScreens).join(', ') : 'Unknown (Add Navigation hook!)';
-                        testerResult.className = 'tester-result warning clickable';
-                        testerResult.innerHTML = `⚠️ +${diffMB.toFixed(1)} MB leaked<br><span style="font-size: 11px; color: var(--vscode-foreground); opacity: 0.8; font-weight: normal;">${uniqueScreens.size} Culprits (Click for details)</span>`;
-                        warningBanner.classList.add('visible');
+                        
+                        if (currentScreen !== testStartScreen && currentScreen !== 'Unknown' && testStartScreen !== 'Unknown') {
+                            // Scenario B: Educational UX (Ended on a different screen)
+                            testerResult.className = 'tester-result info clickable';
+                            testerResult.innerHTML = `ℹ️ +${diffMB.toFixed(1)} MB Retained<br><span style="font-size: 11px; color: var(--vscode-foreground); opacity: 0.8; font-weight: normal;">Screens still open (Click for details)</span>`;
+                            warningBanner.className = 'warning-banner visible';
+                            warningBanner.style.background = 'rgba(79, 195, 247, 0.1)';
+                            warningBanner.style.borderColor = 'rgba(79, 195, 247, 0.3)';
+                            warningBanner.innerHTML = `<strong>ℹ️ Navigation Memory Retained</strong><br>
+                                Your memory increased by +${diffMB.toFixed(1)} MB, but you ended the test on a different screen (<b>${currentScreen}</b>) than you started on (<b>${testStartScreen}</b>).<br><br>
+                                This is completely normal React Navigation behavior! To accurately test for a true memory leak, you must close this screen by going back to <b>${testStartScreen}</b> and ending the test again.`;
+                        } else {
+                            // Scenario A: Big Red Warning (Ended on start screen, memory leaked)
+                            testerResult.className = 'tester-result warning clickable';
+                            testerResult.innerHTML = `⚠️ +${diffMB.toFixed(1)} MB leaked<br><span style="font-size: 11px; color: var(--vscode-foreground); opacity: 0.8; font-weight: normal;">${uniqueScreens.size} Culprits (Click for details)</span>`;
+                            warningBanner.className = 'warning-banner visible';
+                            warningBanner.style.background = 'rgba(244, 67, 54, 0.1)';
+                            warningBanner.style.borderColor = 'rgba(244, 67, 54, 0.3)';
+                            warningBanner.innerHTML = `<strong>⚠️ Potential Memory Leak Detected</strong><br>
+                                Your app's memory usage is steadily increasing even after garbage collection. This could indicate a memory leak. Check for unsubscribed event listeners, timers not cleared in <code>useEffect</code> cleanup, or large data being cached indefinitely.`;
+                        }
                     } else {
                         testerResult.className = 'tester-result pass clickable';
                         testerResult.innerHTML = `✅ Pass (No leak)<br><span style="font-size: 11px; color: var(--vscode-foreground); opacity: 0.8; font-weight: normal;">Click for details</span>`;
