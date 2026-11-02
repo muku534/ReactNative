@@ -5,6 +5,21 @@ All notable changes to the React Native Companion extension will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.8] - 2026-11-02
+
+### Added
+- **Build & Export Dashboard**: Introduced a dedicated build system to compile standalone Android and iOS binaries directly within VS Code without terminal commands.
+- **Android APK & Bundle Generation**: Support for building Debug APK (`assembleDebug`), Release APK (`assembleRelease`), and Google Play Store App Bundles (`bundleRelease`).
+- **iOS Local Native Compilation**: Added support for compiling iOS Simulator Debug builds (`.app`) without requiring paid Apple Developer certificates, as well as production Release Archives (`.xcarchive`).
+- **1-Click ADB Device Installation**: Directly deploy and install newly generated APKs onto connected physical devices or running emulators with a single click.
+- **Intelligent Error Diagnostics**: Automatically parses Gradle and Xcode compilation logs to extract the exact failure root cause (e.g. missing keystores, Java incompatibility, or missing SDK paths) and presents them in an interactive popup.
+- **Auto SDK Detection & Environment Config**: Automatically locates Android SDK paths on macOS, Windows, and Linux to configure `android/local.properties` if missing.
+- **Segmented Top Navigation**: Redesigned the sidebar with native-style top tabs (`Devices` and `Build & Export`) to eliminate scrolling and provide instant access to all development tools.
+- **Recent Artifacts Tracker**: Remembers the last generated APK/AAB and provides quick actions to reveal in OS, copy path, or install to a device.
+
+### Fixed
+- **Progress Notification Dismissal**: Resolved an issue where background build progress notifications remained visible after completion due to awaited user action promises.
+
 ## [1.3.7] - 2026-06-30
 
 ### Fixed

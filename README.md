@@ -6,6 +6,22 @@ The ultimate workspace companion for React Native CLI and Expo developers. Creat
 
 ---
 
+## ✨ What's New in v1.3.8 — One-Click Build & Export (APK, AAB & iOS)
+
+Say goodbye to navigating terminal folders, remembering complex Gradle commands, and setting up signing configs manually! React Native Companion now features a dedicated **Build & Export Dashboard** directly inside the sidebar.
+
+- **🤖 Android Debug APK**: One-click build for rapid local testing (`assembleDebug`).
+- **🚀 Android Release APK**: Standalone production-grade `.apk` ready for distribution (`assembleRelease`).
+- **📦 Android App Bundle (AAB)**: Production-ready `.aab` package formatted for Google Play Console upload (`bundleRelease`).
+- **🍎 iOS Simulator (.app)**: Compile native debug `.app` binaries for iOS Simulators with **zero Apple Developer certificates or provisioning profiles required**.
+- **🏛️ iOS Release Archive (.xcarchive)**: Generate full release archives for TestFlight and App Store submission.
+- **📲 1-Click ADB Device Installation**: Directly deploy and install newly built APKs onto connected Android phones or running emulators with a single click.
+- **📂 Instant OS Reveal**: Open Finder or File Explorer with the exact generated file highlighted.
+- **🔍 Intelligent Error Diagnostics**: Automatically parses messy Gradle and Xcode build logs to isolate the exact root cause in an interactive popup (with direct links to fix keystore, JDK, or SDK issues).
+- **🧭 Top Segmented Navigation**: Instantly toggle between **Devices** and **Build & Export** right at the top of the sidebar. Zero scrolling required!
+
+---
+
 ## ✨ What's New in v1.3.7 — Memory Monitor & Leak Tester
 
 Stop guessing where your memory leaks are! The new Memory Monitor hooks directly into the Hermes engine to provide real-time memory usage charts directly in VS Code. 
@@ -50,6 +66,14 @@ See the extension in action! Watch how easy it is to boot devices and run your a
 ---
 
 ## Key Features
+
+### 📦 Build & Export Suite (v1.3.8)
+- **Zero Terminal Compilation**: Build Debug APK, Release APK, Release AAB, and iOS Simulator `.app` directly from the sidebar.
+- **Expo & CLI Auto-Adaptation**: Automatically checks for native directories and offers 1-click `npx expo prebuild` when needed.
+- **Auto SDK Detection**: Automatically locates Android SDK paths across macOS, Windows, and Linux to generate `android/local.properties` if missing.
+- **1-Click ADB Install**: Installs generated APKs straight onto connected hardware or emulators via `adb install -r`.
+- **Intelligent Error Parser**: Detects common failure points (Keystore missing, Java/JDK mismatch, Android SDK missing, Xcode team missing) and presents concise root-cause diagnostics with troubleshooting guides.
+- **Recent Artifacts Tracker**: Preserves the latest generated binary with quick actions to reveal in Finder/Explorer or copy path.
 
 ### 🧠 Memory Monitor (v1.3.6+)
 - **Real-time Engine Stats**: Bypasses traditional dev tools by pulling instrumented stats directly from the Hermes engine.
@@ -183,10 +207,21 @@ You can customize the commands executed by the extension when the Run button is 
 | CocoaPods Installation | ✅ | — | — |
 | Physical Devices USB/Wi-Fi | ✅ | ✅ | ✅ |
 | Direct Desktop Mirroring (scrcpy) | ✅ | ✅ | ✅ |
+| Android Build (Debug/Release APK & AAB) | ✅ | ✅ | ✅ |
+| 1-Click ADB Install on Device | ✅ | ✅ | ✅ |
+| iOS Native Build (Simulator .app / Archive) | ✅ | — | — |
 
 ## Release Notes
 
-### v1.3.7 (Latest)
+### v1.3.8 (Latest)
+- 📦 **Build & Export Dashboard**: Added full support for compiling Debug APK, Release APK, Release AAB, and iOS Simulator `.app` / Release Archives directly from the editor.
+- 📲 **1-Click ADB Device Installation**: Install generated APKs straight onto connected phones and emulators with one click.
+- 🧭 **Segmented Top Navigation**: Redesigned the sidebar with native top tabs (`Devices` and `Build & Export`) so build tools are never hidden behind long device lists.
+- 🔍 **Intelligent Error Diagnostics**: Parses verbose Gradle and Xcode compilation logs to extract exact root cause errors and actionable troubleshooting tips.
+- ⚙️ **Automatic SDK Detection**: Locates Android SDK paths and automatically generates `android/local.properties` if missing.
+- 🐛 **Progress Dialog Fix**: Resolved an issue where background progress notifications persisted on screen after build completion.
+
+### v1.3.7
 - 🧠 **Timeline Accuracy Fix**: Improved screen leak timeline accuracy by automatically forcing garbage collection precisely when navigation occurs.
 - 🧠 **Memory Monitor Educational UX**: Added intelligent navigation state tracking to the Screen Leak Profiler. The tool now distinguishes between true memory leaks and active screens retained in the navigation stack, providing friendly educational warnings instead of scary false positives.
 

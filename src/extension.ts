@@ -5,6 +5,7 @@ import { exec } from 'child_process';
 import { SidebarProvider } from './sidebarProvider';
 import { NetworkPanelManager } from './networkPanelProvider';
 import { MemoryPanelManager } from './memoryPanelProvider';
+import { BuildManager } from './buildManager';
 
 export function activate(context: vscode.ExtensionContext) {
 
@@ -141,6 +142,37 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.commands.registerCommand('reactnative.openMemoryMonitor', () => {
             MemoryPanelManager.createOrShow(context.extensionUri);
+        })
+    );
+
+    // ── Build Commands ────────────────────────────────────────
+    context.subscriptions.push(
+        vscode.commands.registerCommand('reactnative.buildApp', () => {
+            BuildManager.promptAndBuild();
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('reactnative.buildAndroidDebug', () => {
+            BuildManager.promptAndBuild('android-debug-apk');
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('reactnative.buildAndroidRelease', () => {
+            BuildManager.promptAndBuild('android-release-apk');
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('reactnative.buildAndroidBundle', () => {
+            BuildManager.promptAndBuild('android-release-aab');
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('reactnative.buildIOS', () => {
+            BuildManager.promptAndBuild();
         })
     );
 }

@@ -3,7 +3,7 @@
   "displayName": "React Native Companion",
   "description": "Streamline React Native development — project creation, device management, and one-click run from VS Code.",
   "icon": "images/icon.png",
-  "version": "1.3.7",
+  "version": "1.3.8",
   "publisher": "muku534",
   "repository": {
     "type": "git",
@@ -49,6 +49,31 @@
       {
         "command": "reactnative.openMemoryMonitor",
         "title": "React Native: Open Memory Monitor",
+        "category": "ReactNative"
+      },
+      {
+        "command": "reactnative.buildApp",
+        "title": "React Native: Build App (APK / AAB / iOS)...",
+        "category": "ReactNative"
+      },
+      {
+        "command": "reactnative.buildAndroidDebug",
+        "title": "React Native: Build Android Debug APK",
+        "category": "ReactNative"
+      },
+      {
+        "command": "reactnative.buildAndroidRelease",
+        "title": "React Native: Build Android Release APK",
+        "category": "ReactNative"
+      },
+      {
+        "command": "reactnative.buildAndroidBundle",
+        "title": "React Native: Build Android Release Bundle (AAB)",
+        "category": "ReactNative"
+      },
+      {
+        "command": "reactnative.buildIOS",
+        "title": "React Native: Build iOS App",
         "category": "ReactNative"
       }
     ],

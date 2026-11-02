@@ -12,28 +12,34 @@
     color: var(--vscode-foreground);
     background: transparent;
     padding: 8px;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
   }
 
   .header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 2px 10px;
+    padding: 0 2px 8px;
     border-bottom: 1px solid var(--vscode-panel-border);
-    margin-bottom: 10px;
+    margin-bottom: 8px;
   }
 
   .header-title {
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    opacity: 0.6;
+    opacity: 0.7;
+    display: flex;
+    align-items: center;
+    gap: 5px;
   }
 
   .header-actions {
     display: flex;
-    gap: 2px;
+    gap: 3px;
   }
 
   .icon-btn {
@@ -41,27 +47,101 @@
     border: none;
     cursor: pointer;
     color: var(--vscode-foreground);
-    opacity: 0.6;
+    opacity: 0.65;
     padding: 3px 5px;
     border-radius: 4px;
-    font-size: 14px;
+    font-size: 13px;
     display: flex;
     align-items: center;
+    justify-content: center;
   }
 
   .icon-btn:hover { opacity: 1; background: var(--vscode-toolbar-hoverBackground); }
+  .icon-btn.wifi-btn { color: #007aff; opacity: 0.85; }
 
-  .icon-btn.wifi-btn { color: #007aff; opacity: 0.8; font-size: 13px; }
-  .icon-btn.wifi-btn:hover { opacity: 1; }
+  /* ── Tabs Navigation ────────────────────────────────── */
+  .tabs-nav {
+    display: flex;
+    background: var(--vscode-editor-background, rgba(0, 0, 0, 0.18));
+    border: 1px solid var(--vscode-panel-border);
+    border-radius: 6px;
+    padding: 2px;
+    margin-bottom: 10px;
+    gap: 2px;
+  }
 
+  .tab-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 5px 6px;
+    font-size: 11px;
+    font-weight: 500;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--vscode-foreground);
+    opacity: 0.7;
+    cursor: pointer;
+    transition: all 0.12s ease;
+  }
+
+  .tab-btn:hover {
+    opacity: 1;
+    background: var(--vscode-list-hoverBackground);
+  }
+
+  .tab-btn.active {
+    opacity: 1;
+    background: var(--vscode-button-background);
+    color: var(--vscode-button-foreground);
+    font-weight: 600;
+  }
+
+  .tab-badge {
+    font-size: 9px;
+    padding: 1px 5px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.15);
+    font-weight: 600;
+  }
+
+  .tab-btn.active .tab-badge {
+    background: rgba(0, 0, 0, 0.25);
+  }
+
+  .building-dot {
+    animation: pulse 1.2s infinite;
+  }
+
+  @keyframes pulse {
+    0% { opacity: 0.3; }
+    50% { opacity: 1; }
+    100% { opacity: 0.3; }
+  }
+
+  /* ── Views ─────────────────────────────────────────── */
+  .view-pane {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+
+  .view-pane.hidden {
+    display: none !important;
+  }
+
+  /* ── Devices View Styles ────────────────────────────── */
   .section-label {
     font-size: 10px;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.09em;
-    opacity: 0.5;
+    opacity: 0.55;
     padding: 0 2px;
-    margin: 12px 0 5px;
+    margin: 10px 0 5px;
     display: flex;
     align-items: center;
     gap: 5px;
@@ -135,17 +215,6 @@
   .conn-badge.wifi { background: rgba(0, 122, 255, 0.15); color: #007aff; }
   .conn-badge.sim { background: rgba(142, 142, 147, 0.15); color: #8e8e93; }
 
-  .status-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-
-  .status-dot.booted { background: #3ddc84; }
-  .status-dot.connected { background: #3ddc84; }
-  .status-dot.offline { background: #666; }
-
   .device-actions {
     display: flex;
     gap: 3px;
@@ -157,7 +226,7 @@
     border: none;
     cursor: pointer;
     color: var(--vscode-foreground);
-    opacity: 0.4;
+    opacity: 0.45;
     padding: 2px 4px;
     border-radius: 3px;
     font-size: 12px;
@@ -166,24 +235,16 @@
   }
 
   .action-btn:hover { opacity: 1; background: var(--vscode-toolbar-hoverBackground); }
-
-  .action-btn.boot-btn { color: #3ddc84; opacity: 0.7; }
-  .action-btn.boot-btn:hover { opacity: 1; }
-
-  .action-btn.run-btn { color: #007aff; opacity: 0.7; }
-  .action-btn.run-btn:hover { opacity: 1; }
-
-  .action-btn.mirror-btn { color: #af52de; opacity: 0.7; font-size: 11px; }
-  .action-btn.mirror-btn:hover { opacity: 1; }
-
-  .action-btn.disconnect-btn { color: #ff453a; opacity: 0.7; font-size: 11px; }
-  .action-btn.disconnect-btn:hover { opacity: 1; }
+  .action-btn.boot-btn { color: #3ddc84; opacity: 0.75; }
+  .action-btn.run-btn { color: #007aff; opacity: 0.75; }
+  .action-btn.mirror-btn { color: #af52de; opacity: 0.75; font-size: 11px; }
+  .action-btn.disconnect-btn { color: #ff453a; opacity: 0.75; font-size: 11px; }
 
   .run-bar {
     display: flex;
     gap: 5px;
-    margin-top: 12px;
-    padding-top: 12px;
+    margin-top: 10px;
+    padding-top: 10px;
     border-top: 1px solid var(--vscode-panel-border);
   }
 
@@ -207,18 +268,11 @@
   .run-btn-main:hover { background: var(--vscode-button-secondaryHoverBackground); }
   .run-btn-main:disabled { opacity: 0.4; cursor: not-allowed; }
 
-  .run-btn-main.primary {
-    background: var(--vscode-button-background);
-    color: var(--vscode-button-foreground);
-  }
-
-  .run-btn-main.primary:hover { background: var(--vscode-button-hoverBackground); }
-
   .metro-card {
     border: 1px solid var(--vscode-panel-border);
     border-radius: 5px;
     padding: 8px 10px;
-    margin-top: 10px;
+    margin-top: 8px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -226,7 +280,7 @@
 
   .metro-label {
     font-size: 11px;
-    opacity: 0.7;
+    opacity: 0.75;
     display: flex;
     align-items: center;
     gap: 5px;
@@ -250,17 +304,260 @@
     border-color: rgba(255, 69, 58, 0.3);
   }
 
+  .switch-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--vscode-editor-background, rgba(0,0,0,0.1));
+    border: 1px dashed var(--vscode-panel-border);
+    border-radius: 5px;
+    padding: 7px 9px;
+    margin-top: 8px;
+    font-size: 11px;
+    cursor: pointer;
+    opacity: 0.8;
+    transition: opacity 0.15s;
+  }
+
+  .switch-banner:hover {
+    opacity: 1;
+    border-color: var(--vscode-focusBorder);
+  }
+
+  /* ── Build & Export View Styles ──────────────────────── */
+  .framework-tag-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 8px;
+    background: var(--vscode-editor-background, rgba(0,0,0,0.12));
+    border-radius: 5px;
+    margin-bottom: 8px;
+    font-size: 11px;
+  }
+
+  .framework-badge {
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .build-section-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    opacity: 0.55;
+    margin: 10px 2px 5px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .build-card-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 5px;
+    border: 1px solid var(--vscode-panel-border);
+    background: var(--vscode-editor-background, rgba(0, 0, 0, 0.12));
+    margin-bottom: 6px;
+    transition: all 0.12s;
+  }
+
+  .build-card-row:hover {
+    background: var(--vscode-list-hoverBackground);
+    border-color: var(--vscode-focusBorder);
+  }
+
+  .build-card-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .build-card-icon {
+    font-size: 16px;
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+    flex-shrink: 0;
+  }
+
+  .build-card-text {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .build-card-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--vscode-foreground);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .build-card-desc {
+    font-size: 10px;
+    opacity: 0.55;
+    margin-top: 1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .build-action-btn {
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 500;
+    border-radius: 4px;
+    border: 1px solid var(--vscode-panel-border);
+    background: var(--vscode-button-secondaryBackground);
+    color: var(--vscode-button-secondaryForeground);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.1s;
+    flex-shrink: 0;
+  }
+
+  .build-action-btn:hover {
+    background: var(--vscode-button-secondaryHoverBackground);
+    border-color: var(--vscode-focusBorder);
+  }
+
+  .build-action-btn.primary {
+    background: var(--vscode-button-background);
+    color: var(--vscode-button-foreground);
+    border-color: transparent;
+  }
+
+  .build-action-btn.primary:hover {
+    background: var(--vscode-button-hoverBackground);
+  }
+
+  .build-action-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /* Active Progress Banner */
+  .active-build-banner {
+    padding: 9px 10px;
+    border-radius: 6px;
+    border: 1px solid #007aff;
+    background: rgba(0, 122, 255, 0.12);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .active-build-info {
+    font-size: 11px;
+    line-height: 1.4;
+  }
+
+  .active-build-title {
+    font-weight: 600;
+    color: var(--vscode-foreground);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .cancel-btn {
+    padding: 3px 7px;
+    font-size: 10px;
+    border-radius: 3px;
+    border: 1px solid rgba(255, 69, 58, 0.4);
+    background: rgba(255, 69, 58, 0.15);
+    color: #ff453a;
+    cursor: pointer;
+  }
+
+  .cancel-btn:hover {
+    background: rgba(255, 69, 58, 0.25);
+  }
+
+  /* Recent Artifact Card */
+  .recent-artifact-card {
+    padding: 9px 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(61, 220, 132, 0.35);
+    background: rgba(61, 220, 132, 0.08);
+    margin-bottom: 10px;
+  }
+
+  .artifact-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px;
+    font-size: 11px;
+    color: #3ddc84;
+    font-weight: 600;
+  }
+
+  .artifact-name {
+    font-size: 11px;
+    opacity: 0.9;
+    word-break: break-all;
+    margin-bottom: 8px;
+    font-family: var(--vscode-editor-font-family, monospace);
+  }
+
+  .artifact-actions-row {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+
+  .artifact-action-btn {
+    padding: 3px 7px;
+    font-size: 10px;
+    border-radius: 3px;
+    border: 1px solid var(--vscode-panel-border);
+    background: var(--vscode-button-secondaryBackground);
+    color: var(--vscode-button-secondaryForeground);
+    cursor: pointer;
+  }
+
+  .artifact-action-btn:hover {
+    background: var(--vscode-button-secondaryHoverBackground);
+  }
+
+  .artifact-action-btn.install {
+    background: rgba(61, 220, 132, 0.2);
+    color: #3ddc84;
+    border-color: rgba(61, 220, 132, 0.3);
+  }
+
+  .artifact-action-btn.install:hover {
+    background: rgba(61, 220, 132, 0.3);
+  }
+
   .empty-state {
     text-align: center;
     padding: 24px 12px;
-    opacity: 0.5;
+    opacity: 0.55;
     font-size: 12px;
     line-height: 1.5;
   }
 
   .tip-text {
     font-size: 10px;
-    opacity: 0.4;
+    opacity: 0.45;
     text-align: center;
     padding: 6px 4px;
     line-height: 1.4;
@@ -270,29 +567,158 @@
 </head>
 <body>
 
+<!-- Header -->
 <div class="header">
-  <span class="header-title">RN Devices</span>
+  <span class="header-title">⚡ RN Companion</span>
   <div class="header-actions">
+    <button class="icon-btn" onclick="openNetworkMonitor()" title="Open Network Monitor">🌐</button>
     <button class="icon-btn wifi-btn" onclick="connectWifi()" title="Connect WiFi Device">📡</button>
     <button class="icon-btn" onclick="refresh()" title="Refresh">↻</button>
   </div>
 </div>
 
-<div id="content">
-  <div class="empty-state">Loading devices...</div>
+<!-- Tabs Segmented Navigation -->
+<div class="tabs-nav">
+  <button class="tab-btn active" id="tab-nav-devices" onclick="switchTab('devices')">
+    <span>📱</span>
+    <span>Devices</span>
+    <span class="tab-badge" id="devices-badge">0</span>
+  </button>
+  <button class="tab-btn" id="tab-nav-build" onclick="switchTab('build')">
+    <span>📦</span>
+    <span>Build & Export</span>
+    <span class="tab-badge building-dot" id="building-badge" style="display:none;">⏳</span>
+  </button>
 </div>
 
-<div class="run-bar">
-  <button class="run-btn-main" id="btn-run" onclick="runSelected()" disabled>▶ Run on Selected</button>
+<!-- ═════════════════════════════════════════════════════════════ -->
+<!-- VIEW 1: DEVICES VIEW                                          -->
+<!-- ═════════════════════════════════════════════════════════════ -->
+<div class="view-pane" id="view-devices">
+  <div id="content">
+    <div class="empty-state">Loading devices...</div>
+  </div>
+
+  <div class="run-bar">
+    <button class="run-btn-main primary" id="btn-run" onclick="runSelected()" disabled>▶ Run on Selected</button>
+  </div>
+
+  <div class="metro-card">
+    <span class="metro-label">⚡ Metro Bundler</span>
+    <button class="metro-toggle" id="metro-btn" onclick="toggleMetro()">Start</button>
+  </div>
+
+  <div class="switch-banner" onclick="switchTab('build')" title="Go to Build & Export">
+    <span>📦 <b>Need an APK or Bundle?</b></span>
+    <span>Build Now ➔</span>
+  </div>
+
+  <div class="tip-text" id="tip">
+    Select a device and click Run. Offline devices boot automatically.
+  </div>
 </div>
 
-<div class="metro-card">
-  <span class="metro-label">⚡ Metro Bundler</span>
-  <button class="metro-toggle" id="metro-btn" onclick="toggleMetro()">Start</button>
-</div>
+<!-- ═════════════════════════════════════════════════════════════ -->
+<!-- VIEW 2: BUILD & EXPORT VIEW                                   -->
+<!-- ═════════════════════════════════════════════════════════════ -->
+<div class="view-pane hidden" id="view-build">
 
-<div class="tip-text" id="tip">
-  Select a device and click Run. Offline devices will be booted automatically.
+  <!-- Framework Status Tag -->
+  <div class="framework-tag-bar">
+    <span class="framework-badge" id="framework-label">⚛️ React Native Project</span>
+    <button class="icon-btn" onclick="promptBuild()" title="Open Build Menu from Command Palette">⚡ All Targets ▾</button>
+  </div>
+
+  <!-- Active Building Banner (Shown when building) -->
+  <div class="active-build-banner" id="active-build-card" style="display:none;">
+    <div class="active-build-info">
+      <div class="active-build-title">
+        <span class="building-dot">⏳</span> <span id="active-build-name">Building...</span>
+      </div>
+      <div style="font-size:10px;opacity:0.8;margin-top:2px;">Check "React Native Build" Output</div>
+    </div>
+    <button class="cancel-btn" onclick="cancelBuild()">Cancel</button>
+  </div>
+
+  <!-- Recent Artifact Card (Shown after build or loaded from state) -->
+  <div class="recent-artifact-card" id="recent-artifact-card" style="display:none;">
+    <div class="artifact-header">
+      <span>🎉 Last Generated Artifact</span>
+      <span id="artifact-size-badge" style="font-size:10px;opacity:0.8;"></span>
+    </div>
+    <div class="artifact-name" id="artifact-name-display">app-release.apk</div>
+    <div class="artifact-actions-row">
+      <button class="artifact-action-btn" onclick="revealArtifact()" title="Show in Finder / Explorer">📂 Open Folder</button>
+      <button class="artifact-action-btn install" id="btn-artifact-install" onclick="installArtifact()" title="Install APK directly to connected device">📲 Install to Device</button>
+      <button class="artifact-action-btn" onclick="copyArtifactPath()" title="Copy absolute file path">📋 Copy Path</button>
+    </div>
+  </div>
+
+  <!-- Android Targets -->
+  <div class="build-section-label">🤖 Android Build Targets</div>
+
+  <div class="build-card-row">
+    <div class="build-card-left">
+      <div class="build-card-icon">🤖</div>
+      <div class="build-card-text">
+        <div class="build-card-title">Debug APK</div>
+        <div class="build-card-desc">assembleDebug · Fast local test APK</div>
+      </div>
+    </div>
+    <button class="build-action-btn" onclick="startBuild('android-debug-apk')">Build APK</button>
+  </div>
+
+  <div class="build-card-row">
+    <div class="build-card-left">
+      <div class="build-card-icon">🚀</div>
+      <div class="build-card-text">
+        <div class="build-card-title">Release APK</div>
+        <div class="build-card-desc">assembleRelease · Standalone production APK</div>
+      </div>
+    </div>
+    <button class="build-action-btn primary" onclick="startBuild('android-release-apk')">Build APK</button>
+  </div>
+
+  <div class="build-card-row">
+    <div class="build-card-left">
+      <div class="build-card-icon">📦</div>
+      <div class="build-card-text">
+        <div class="build-card-title">Release Bundle (AAB)</div>
+        <div class="build-card-desc">bundleRelease · Google Play Console bundle</div>
+      </div>
+    </div>
+    <button class="build-action-btn" onclick="startBuild('android-release-aab')">Build AAB</button>
+  </div>
+
+  <!-- iOS Targets -->
+  <div class="build-section-label">🍎 iOS Build Targets</div>
+
+  <div class="build-card-row">
+    <div class="build-card-left">
+      <div class="build-card-icon">🍎</div>
+      <div class="build-card-text">
+        <div class="build-card-title">iOS Simulator (.app)</div>
+        <div class="build-card-desc">Debug simulator build · No signing cert needed</div>
+      </div>
+    </div>
+    <button class="build-action-btn" onclick="startBuild('ios-simulator-app')">Build .app</button>
+  </div>
+
+  <div class="build-card-row">
+    <div class="build-card-left">
+      <div class="build-card-icon">🏛️</div>
+      <div class="build-card-text">
+        <div class="build-card-title">Release Archive (.xcarchive)</div>
+        <div class="build-card-desc">Production archive for App Store / TestFlight</div>
+      </div>
+    </div>
+    <button class="build-action-btn" onclick="startBuild('ios-release-archive')">Archive</button>
+  </div>
+
+  <div class="tip-text">
+    Builds stream in the <b>React Native Build</b> output panel. Generated artifacts appear here for 1-click install.
+  </div>
+
 </div>
 
 <script>
@@ -300,11 +726,44 @@
   let devices = [];
   let selectedId = null;
   let metroRunning = false;
+  let activeTab = 'devices';
+  let lastArtifact = null;
+
+  // Restore state if available
+  const previousState = vscode.getState() || {};
+  if (previousState.activeTab) {
+    switchTab(previousState.activeTab);
+  }
+  if (previousState.lastArtifact) {
+    displayArtifact(previousState.lastArtifact);
+  }
+
+  function switchTab(tab) {
+    activeTab = tab;
+    vscode.setState({ ...vscode.getState(), activeTab: tab });
+
+    const tabDevices = document.getElementById('tab-nav-devices');
+    const tabBuild = document.getElementById('tab-nav-build');
+    const viewDevices = document.getElementById('view-devices');
+    const viewBuild = document.getElementById('view-build');
+
+    if (tab === 'devices') {
+      tabDevices.classList.add('active');
+      tabBuild.classList.remove('active');
+      viewDevices.classList.remove('hidden');
+      viewBuild.classList.add('hidden');
+    } else {
+      tabDevices.classList.remove('active');
+      tabBuild.classList.add('active');
+      viewDevices.classList.add('hidden');
+      viewBuild.classList.remove('hidden');
+    }
+  }
 
   function refresh() {
     vscode.postMessage({ type: 'refresh' });
     document.getElementById('content').innerHTML =
-      '<div class="empty-state">Refreshing...</div>';
+      '<div class="empty-state">Refreshing devices...</div>';
   }
 
   function runSelected() {
@@ -345,12 +804,77 @@
     vscode.postMessage({ type: 'openNetworkMonitor' });
   }
 
+  function startBuild(target) {
+    vscode.postMessage({ type: 'build', target: target });
+  }
+
+  function promptBuild() {
+    vscode.postMessage({ type: 'promptBuild' });
+  }
+
+  function cancelBuild() {
+    vscode.postMessage({ type: 'cancelBuild' });
+  }
+
+  function revealArtifact() {
+    if (lastArtifact && lastArtifact.path) {
+      vscode.postMessage({ type: 'revealArtifact', path: lastArtifact.path });
+    }
+  }
+
+  function installArtifact() {
+    if (lastArtifact && lastArtifact.path) {
+      vscode.postMessage({ type: 'installApk', path: lastArtifact.path });
+    }
+  }
+
+  function copyArtifactPath() {
+    if (lastArtifact && lastArtifact.path) {
+      vscode.postMessage({ type: 'copyText', text: lastArtifact.path });
+    }
+  }
+
+  function displayArtifact(art) {
+    if (!art || !art.path) { return; }
+    lastArtifact = art;
+    vscode.setState({ ...vscode.getState(), lastArtifact: art });
+
+    const card = document.getElementById('recent-artifact-card');
+    const nameEl = document.getElementById('artifact-name-display');
+    const sizeBadge = document.getElementById('artifact-size-badge');
+    const installBtn = document.getElementById('btn-artifact-install');
+
+    card.style.display = 'block';
+    nameEl.textContent = art.name;
+    sizeBadge.textContent = art.size ? `(${art.size})` : '';
+
+    if (art.name.endsWith('.apk')) {
+      installBtn.style.display = 'inline-block';
+    } else {
+      installBtn.style.display = 'none';
+    }
+  }
+
+  function setBuildingState(isBuilding, targetName) {
+    const banner = document.getElementById('active-build-card');
+    const buildBadge = document.getElementById('building-badge');
+    const nameEl = document.getElementById('active-build-name');
+
+    if (isBuilding) {
+      banner.style.display = 'flex';
+      buildBadge.style.display = 'inline-block';
+      nameEl.textContent = targetName ? `Building ${targetName}...` : 'Building...';
+    } else {
+      banner.style.display = 'none';
+      buildBadge.style.display = 'none';
+    }
+  }
+
   function selectDevice(id) {
     selectedId = id;
     document.querySelectorAll('.device-card').forEach(el => {
       el.classList.toggle('selected', el.dataset.id === id);
     });
-    // Enable the run button
     document.getElementById('btn-run').disabled = false;
   }
 
@@ -381,22 +905,18 @@
 
     let actionsHtml = '';
 
-    // Mirror button for connected physical devices
     if (isOnline && d.isPhysical) {
       actionsHtml += `<button class="action-btn mirror-btn" onclick="mirrorDevice('${d.id}', event)" title="Mirror Screen">🪞</button>`;
     }
 
-    // Disconnect button for WiFi devices
     if (isWifi) {
       actionsHtml += `<button class="action-btn disconnect-btn" onclick="disconnectDevice('${d.id}', event)" title="Disconnect WiFi">✕</button>`;
     }
 
-    // Boot button for offline virtual devices
     if (!isOnline && !d.isPhysical) {
       actionsHtml += `<button class="action-btn boot-btn" onclick="bootDevice('${d.id}', event)" title="Boot Device">⏻</button>`;
     }
 
-    // Run button always
     actionsHtml += `<button class="action-btn run-btn" onclick="runDevice('${d.id}', event)" title="${isOnline ? 'Run App' : 'Boot & Run App'}">▶</button>`;
 
     return `
@@ -417,8 +937,10 @@
   }
 
   function renderDevices(data) {
-    devices = data;
+    devices = data || [];
     const content = document.getElementById('content');
+    const badge = document.getElementById('devices-badge');
+    badge.textContent = devices.length;
 
     if (!devices.length) {
       content.innerHTML = `
@@ -436,21 +958,18 @@
 
     let html = '';
 
-    // ── Physical Devices Section ──
     if (physical.length) {
       const connectedCount = physical.filter(d => d.status === 'connected').length;
       html += `<div class="section-label">📲 Physical Devices (${connectedCount} connected)</div>`;
       physical.forEach(d => { html += renderDeviceCard(d); });
     }
 
-    // ── iOS Simulators Section ──
     if (iosSims.length) {
       const bootedCount = iosSims.filter(d => d.status === 'booted').length;
       html += `<div class="section-label">📱 iOS Simulators (${bootedCount} running)</div>`;
       iosSims.forEach(d => { html += renderDeviceCard(d); });
     }
 
-    // ── Android Virtual Section ──
     if (androidVirtual.length) {
       const connectedCount = androidVirtual.filter(d => d.status === 'connected').length;
       html += `<div class="section-label">🤖 Android Emulators (${connectedCount} connected)</div>`;
@@ -477,9 +996,27 @@
         btn.classList.remove('running');
       }
     }
+    if (msg.type === 'initProject') {
+      const data = msg.data || {};
+      const lbl = document.getElementById('framework-label');
+      if (lbl) {
+        lbl.textContent = data.isExpo ? '📦 Expo Project' : '⚛️ React Native CLI';
+      }
+      if (data.lastArtifact) {
+        displayArtifact(data.lastArtifact);
+      }
+      setBuildingState(data.isBuilding);
+    }
+    if (msg.type === 'buildStatus') {
+      const data = msg.data || {};
+      setBuildingState(data.building, data.targetTitle);
+      if (data.lastArtifact) {
+        displayArtifact(data.lastArtifact);
+      }
+    }
   });
 
-  // Notify extension that webview is loaded and ready to receive data
+  // Notify extension that webview is loaded
   vscode.postMessage({ type: 'ready' });
 </script>
 </body>

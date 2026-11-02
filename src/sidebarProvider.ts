@@ -15,6 +15,7 @@ import {
 } from './deviceManager';
 import { waitThenArrange } from './windowManager';
 import { isExpoProject } from './utils';
+import { BuildManager, BuildTarget } from './buildManager';
 
 export class SidebarProvider implements vscode.WebviewViewProvider {
   private _view?: vscode.WebviewView;
@@ -32,13 +33,35 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 
     webviewView.webview.html = this._getHtml();
 
+    // Subscribe to build status updates
+    BuildManager.onStatusChange((event) => {
+      this._view?.webview.postMessage({
+        type: 'buildStatus',
+        data: event
+      });
+    });
+
     // Handle messages from WebView
     webviewView.webview.onDidReceiveMessage(async (msg) => {
       const projectPath =
         vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath || '';
 
       switch (msg.type) {
-        case 'ready':
+        case 'ready': {
+          const isExpo = isExpoProject(projectPath);
+          this._view?.webview.postMessage({
+            type: 'initProject',
+            data: {
+              isExpo,
+              isMac: os.platform() === 'darwin',
+              lastArtifact: BuildManager.getLastArtifact(),
+              isBuilding: BuildManager.isBuilding()
+            }
+          });
+          await this.refresh();
+          break;
+        }
+
         case 'refresh':
           await this.refresh();
           break;
@@ -214,6 +237,47 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 
         case 'openNetworkMonitor': {
           vscode.commands.executeCommand('reactnative.openNetworkMonitor');
+          break;
+        }
+
+        // ── Build & Export APK / AAB / iOS ──────────────
+        case 'build': {
+          const target = msg.target as BuildTarget | undefined;
+          await BuildManager.promptAndBuild(target);
+          break;
+        }
+
+        case 'promptBuild': {
+          await BuildManager.promptAndBuild();
+          break;
+        }
+
+        case 'cancelBuild': {
+          BuildManager.cancelCurrentBuild();
+          break;
+        }
+
+        case 'revealArtifact': {
+          if (msg.path && fs.existsSync(msg.path)) {
+            vscode.commands.executeCommand('revealFileInOS', vscode.Uri.file(msg.path));
+          } else {
+            vscode.window.showWarningMessage('Artifact file not found on disk.');
+          }
+          break;
+        }
+
+        case 'installApk': {
+          if (msg.path) {
+            await BuildManager.installApk(msg.path);
+          }
+          break;
+        }
+
+        case 'copyText': {
+          if (msg.text) {
+            await vscode.env.clipboard.writeText(msg.text);
+            vscode.window.showInformationMessage('📋 Copied to clipboard!');
+          }
           break;
         }
 
